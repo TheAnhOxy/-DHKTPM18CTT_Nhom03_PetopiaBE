@@ -20,7 +20,7 @@ import java.util.Map;
 
 @RestController
 @Slf4j
-@RequestMapping("/pets")
+@RequestMapping("/api/pets")
 public class PetWebController {
 
     @Autowired
@@ -46,5 +46,6 @@ public class PetWebController {
         }
         return ResponseEntity.ok(result);
     }
+
 
 }

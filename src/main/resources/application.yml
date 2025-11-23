@@ -48,3 +48,8 @@ jwt:
 
 dev:
   nguyen: Nguyen-The-Anh
+
+cloudinary:
+  cloud_name: "dybv2kwhk"
+  api_key: "828476781652141"
+  api_secret: "KNJf4ivOJ-aZ7jwlfrrxria-xWs"
