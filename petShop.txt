@@ -324,7 +324,7 @@ CREATE TABLE notifications (
     user_id VARCHAR(10),
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
-    typeNote ENUM('ORDER_UPDATE', 'NEW_PET', 'VACCINATION_REMINDER', 'PROMOTION') NOT NULL,
+    type_node ENUM('ORDER_UPDATE', 'NEW_PET', 'VACCINATION_REMINDER', 'PROMOTION') NOT NULL,
     is_read TINYINT(1) DEFAULT 0,
     created_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
@@ -334,7 +334,7 @@ CREATE TABLE notifications (
 CREATE TABLE search_history (
     history_id VARCHAR(10) PRIMARY KEY,
     user_id VARCHAR(10),
-    querySearch VARCHAR(255) NOT NULL,
+    query_search VARCHAR(255) NOT NULL,
     created_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
