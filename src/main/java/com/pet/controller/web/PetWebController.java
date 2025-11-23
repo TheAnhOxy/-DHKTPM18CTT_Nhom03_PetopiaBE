@@ -21,7 +21,7 @@ import java.util.Map;
 
 @RestController
 @Slf4j
-@RequestMapping("/pets")
+@RequestMapping("/api/pets")
 public class PetWebController {
 
     @Autowired
@@ -48,25 +48,5 @@ public class PetWebController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse> getPetById(@PathVariable String id) {
-        PetResponseDTO pet = petService.getPetById(id);
-
-        if (pet == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.builder()
-                            .status(HttpStatus.NOT_FOUND.value())
-                            .message("Không tìm thấy thú cưng")
-                            .build());
-        }
-
-        return ResponseEntity.ok(
-                ApiResponse.builder()
-                        .status(HttpStatus.OK.value())
-                        .message("Lấy chi tiết thú cưng thành công")
-                        .data(pet)
-                        .build()
-        );
-    }
 
 }
