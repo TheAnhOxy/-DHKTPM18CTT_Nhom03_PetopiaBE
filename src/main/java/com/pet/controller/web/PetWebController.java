@@ -3,6 +3,7 @@ package com.pet.controller.web;
 import com.pet.entity.Pet;
 import com.pet.modal.request.PetRequestDTO;
 
+import com.pet.modal.response.ApiResponse;
 import com.pet.modal.response.PageResponse;
 import com.pet.modal.response.PetForListResponseDTO;
 import com.pet.modal.response.PetResponseDTO;
