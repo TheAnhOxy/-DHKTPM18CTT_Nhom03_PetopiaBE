@@ -68,7 +68,7 @@ public class AuthService {
                 )
         );
         System.out.println("Dang nhap thanh cong");
-        var user = userRepository.findByUsernameOrPhoneNumber(request.getIdentifier())
+        var user = userRepository.findByIdentifier(request.getIdentifier())
                 .orElseThrow();
 
         var token =  jwtUtils.generateToken(user);

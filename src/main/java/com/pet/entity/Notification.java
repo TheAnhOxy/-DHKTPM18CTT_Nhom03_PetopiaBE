@@ -33,7 +33,7 @@ public class Notification {
     private String content;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "typeNote", nullable = false, columnDefinition = "ENUM('ORDER_UPDATE','NEW_PET','VACCINATION_REMINDER','PROMOTION')")
+    @Column(name = "type_note", nullable = false, columnDefinition = "ENUM('ORDER_UPDATE','NEW_PET','VACCINATION_REMINDER','PROMOTION')")
     private NotificationType typeNote;
 
     @Column(name = "is_read", columnDefinition = "TINYINT(1) DEFAULT 0")

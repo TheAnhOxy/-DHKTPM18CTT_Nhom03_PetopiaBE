@@ -25,7 +25,7 @@ public class SearchHistory {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "querySearch", nullable = false)
+    @Column(name = "query_search", nullable = false)
     private String querySearch;
 
     @CreationTimestamp
