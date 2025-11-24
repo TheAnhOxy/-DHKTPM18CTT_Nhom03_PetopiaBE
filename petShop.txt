@@ -348,7 +348,7 @@ CREATE TABLE vaccines (
     vaccine_type VARCHAR(100),
     description TEXT,
     file VARCHAR(255),
-    status ENUM('Đã tiêm', 'Chưa tiêm', 'Đang chờ') DEFAULT 'Chưa tiêm',
+    status NVARCHAR(50) DEFAULT N'Chưa tiêm',
     note TEXT,
     start_date DATETIME(6),
     end_date DATETIME(6),
