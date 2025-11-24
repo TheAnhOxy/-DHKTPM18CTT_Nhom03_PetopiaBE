@@ -20,7 +20,7 @@ public class ArticleController {
     @Autowired
     private ArticleService articleService;
 
-    // ✅ Tạo bài viết (chỉ ADMIN)
+    // Tạo bài viết (chỉ ADMIN)
     @PostMapping
     public ResponseEntity<ApiResponse> createArticle(@RequestBody ArticleRequestDTO request) {
         try {
@@ -38,7 +38,7 @@ public class ArticleController {
         }
     }
 
-    // ✅ Xem chi tiết bài viết (ai cũng được)
+    // Xem chi tiết bài viết (all user)
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse> getArticleById(@PathVariable String id) {
         ArticleResponseDTO response = articleService.getArticleById(id);
@@ -50,7 +50,7 @@ public class ArticleController {
     }
 
 
-    // ✅ Xem tất cả bài viết (ai cũng được)
+    //  Xem tất cả bài viết (all)
     @GetMapping
     public ResponseEntity<ApiResponse> getAllArticles() {
         List<ArticleResponseDTO> responses = articleService.getAllArticles();
@@ -61,7 +61,7 @@ public class ArticleController {
                 .build());
     }
 
-    // ✅ Cập nhật bài viết (chỉ ADMIN)
+    // Cập nhật bài viết (for ADMIN)
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse> updateArticle(@PathVariable String id,
                                                      @RequestBody ArticleRequestDTO request) {
@@ -80,7 +80,7 @@ public class ArticleController {
         }
     }
 
-    // ✅ Xóa bài viết (chỉ ADMIN)
+    //  Xóa bài viết (for ADMIN)
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse> deleteArticle(@PathVariable String id,
                                                      @RequestBody Map<String, String> body) {

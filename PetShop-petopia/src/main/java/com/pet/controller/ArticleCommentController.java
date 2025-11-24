@@ -16,7 +16,7 @@ public class ArticleCommentController {
     @Autowired
     private ArticleCommentService articleCommentService;
 
-    // 🟢 Lấy comment theo bài viết
+    // Lấy comment theo bài viết
     @GetMapping("/article/{articleId}")
     public ResponseEntity<ApiResponse> getCommentsByArticle(@PathVariable String articleId) {
         List<ArticleCommentResponseDTO> comments = articleCommentService.getCommentsByArticle(articleId);
@@ -27,7 +27,7 @@ public class ArticleCommentController {
                 .build());
     }
 
-    // 🟢 Thêm comment
+    //  Thêm comment
     @PostMapping
     public ResponseEntity<ApiResponse> addComment(@RequestBody ArticleCommentRequestDTO request) {
         ArticleCommentResponseDTO response = articleCommentService.addComment(request);
@@ -38,7 +38,7 @@ public class ArticleCommentController {
                 .build());
     }
 
-    // 🟡 Cập nhật comment
+    // Cập nhật comment
     @PutMapping("/{commentId}")
     public ResponseEntity<ApiResponse> updateComment(@PathVariable String commentId,
                                                      @RequestBody ArticleCommentRequestDTO request) {
@@ -50,7 +50,7 @@ public class ArticleCommentController {
                 .build());
     }
 
-    // 🔴 Xóa comment
+    //  Xóa comment
     @DeleteMapping("/{commentId}")
     public ResponseEntity<ApiResponse> deleteComment(@PathVariable String commentId,
                                                      @RequestParam String userId) {
