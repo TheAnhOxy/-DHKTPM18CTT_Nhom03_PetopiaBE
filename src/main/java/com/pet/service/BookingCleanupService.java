@@ -28,8 +28,11 @@ public class BookingCleanupService {
     public void autoCancelExpiredBookings() {
         log.info("--- Bắt đầu quét các đơn đặt trước quá hạn ---");
 
-        // Cấu hình thời gian hết hạn: 2 phút để test (Thực tế sửa thành minusHours(24))
-        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(2);
+        // Cấu hình thời gian hết hạn: 2 phút để test
+//        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(2);
+
+        // Hết hạn sau 24 giờ
+        LocalDateTime cutoffTime = LocalDateTime.now().minusHours(24);
 
         List<PreBooking> expiredBookings = preBookingRepository.findExpiredConfirmedBookings(cutoffTime);
 
