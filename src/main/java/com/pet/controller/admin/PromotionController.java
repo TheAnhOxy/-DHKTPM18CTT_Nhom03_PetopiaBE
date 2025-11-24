@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/promotions")
+@RequestMapping("/admin/promotions")
 public class PromotionController {
     @Autowired
     private PromotionService promotionService;
@@ -33,13 +33,13 @@ public class PromotionController {
     }
 
     @PostMapping
-    public ResponseEntity<PromotionResponseDTO> addOrUpdatePromotion(@RequestBody PromotionRequestDTO request){
+    public ResponseEntity<PromotionResponseDTO> addOrUpdatePromotion(@RequestBody PromotionRequestDTO request) {
         request.validate();
         PromotionResponseDTO promotion = promotionService.addOrUpdatePromotion(request);
-        if (promotion == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        if (request.getPromotionId() == null) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(promotion);
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(promotion);
+        return ResponseEntity.ok(promotion);
     }
 
     @PutMapping("/{id}/inactive")
