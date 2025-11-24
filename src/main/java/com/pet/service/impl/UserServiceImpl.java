@@ -181,21 +181,24 @@ public class UserServiceImpl implements IUserService {
             return "AD" + System.currentTimeMillis();
         }
     }
-
     @Override
     @Transactional
     public UserResponseDTO saveUser(UserSaveRequestDTO request) {
         User user;
         if (StringUtil.isNotEmpty(request.getUserId())) {
             user = userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getUserId()));
-            checkDuplicateForUpdate(request.getPhoneNumber(), request.getEmail(), user.getUserId());
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found: " + request.getUserId()));
+
+            checkDuplicateForUpdate(request.getPhoneNumber(), request.getEmail(), user.getUserId(), request.getUserName());
+
+            if(request.getUserName() != null) user.setUsername(request.getUserName());
             if (request.getFullName() != null) user.setFullName(request.getFullName());
             if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
             if (request.getEmail() != null) user.setEmail(request.getEmail());
             if (request.getAvatar() != null) user.setAvatar(request.getAvatar());
             if (request.getRole() != null) user.setRole(request.getRole());
             if (request.getIsActive() != null) user.setIsActive(request.getIsActive());
+
             if (StringUtil.isNotEmpty(request.getPassword())) {
                 user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
             }
@@ -207,15 +210,18 @@ public class UserServiceImpl implements IUserService {
             if (userRepository.existsByEmail(request.getEmail())) {
                 throw new DataIntegrityViolationException("Email đã tồn tại");
             }
+            if (userRepository.existsByUsername(request.getUserName())) {
+                throw new DataIntegrityViolationException("Username đã tồn tại");
+            }
             if (StringUtils.isEmpty(request.getPassword())) {
                 throw new IllegalArgumentException("Mật khẩu là bắt buộc khi tạo mới");
             }
 
             user = User.builder()
-                    .userId(generateUserId()) // Sinh ID
+                    .userId(generateUserId())
                     .fullName(request.getFullName())
                     .phoneNumber(request.getPhoneNumber())
-                    .username(request.getPhoneNumber())
+                    .username(request.getUserName())
                     .email(request.getEmail())
                     .passwordHash(passwordEncoder.encode(request.getPassword()))
                     .avatar(request.getAvatar())
@@ -223,16 +229,44 @@ public class UserServiceImpl implements IUserService {
                     .isActive(true)
                     .build();
         }
-
         User savedUser = userRepository.save(user);
+
+        if (request.getAddresses() != null && !request.getAddresses().isEmpty()) {
+            for (AddressRequestDTO addrReq : request.getAddresses()) {
+                Address address = new Address();
+
+                address.setAddressId(generateAddressId());
+                address.setUser(savedUser);
+
+                address.setStreet(addrReq.getStreet());
+                address.setWard(addrReq.getWard());
+                address.setDistrict(addrReq.getDistrict());
+                address.setProvince(addrReq.getProvince());
+                address.setCountry(addrReq.getCountry() != null ? addrReq.getCountry() : "Vietnam");
+                boolean isDefault = addrReq.getIsDefault() != null && addrReq.getIsDefault();
+                address.setIsDefault(isDefault);
+
+                if (isDefault) {
+                    addressRepository.setAllAddressesNonDefault(savedUser.getUserId());
+                }
+
+                addressRepository.save(address);
+            }
+        }
         return userConverter.toUserResponseDTO(savedUser);
     }
 
-    private void checkDuplicateForUpdate(String newPhone, String newEmail, String currentUserId) {
+    private void checkDuplicateForUpdate(String newPhone, String newEmail, String currentUserId, String newUserName) {
         if (newPhone != null) {
             Optional<User> userByPhone = userRepository.findByPhoneNumber(newPhone);
             if (userByPhone.isPresent() && !userByPhone.get().getUserId().equals(currentUserId)) {
                 throw new DataIntegrityViolationException("Số điện thoại đã được sử dụng bởi người khác");
+            }
+        }
+        if(newUserName != null){
+            Optional<User> userByUserName = userRepository.findByUsernameContainingIgnoreCase(newUserName);
+            if(userByUserName.isPresent() && !userByUserName.get().getUserId().equals(currentUserId)){
+                throw  new DataIntegrityViolationException("Username đã tồn tại !");
             }
         }
         if (newEmail != null) {

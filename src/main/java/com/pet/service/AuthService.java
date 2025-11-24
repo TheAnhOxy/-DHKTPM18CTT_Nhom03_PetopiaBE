@@ -75,7 +75,7 @@ public class AuthService {
 
         return LoginResponseDTO.builder()
                 .accessToken(token)
-                .user(user )
+                .user(user)
                 .build();
     }
 }

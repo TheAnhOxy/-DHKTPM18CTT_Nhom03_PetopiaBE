@@ -324,7 +324,7 @@ CREATE TABLE notifications (
     user_id VARCHAR(10),
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
-    type_node ENUM('ORDER_UPDATE', 'NEW_PET', 'VACCINATION_REMINDER', 'PROMOTION') NOT NULL,
+    type_note ENUM('ORDER_UPDATE', 'NEW_PET', 'VACCINATION_REMINDER', 'PROMOTION') NOT NULL,
     is_read TINYINT(1) DEFAULT 0,
     created_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
@@ -348,7 +348,7 @@ CREATE TABLE vaccines (
     vaccine_type VARCHAR(100),
     description TEXT,
     file VARCHAR(255),
-    status ENUM('Đã tiêm', 'Chưa tiêm', 'Đang chờ') DEFAULT 'Chưa tiêm',
+    status NVARCHAR(50) DEFAULT N'Chưa tiêm',
     note TEXT,
     start_date DATETIME(6),
     end_date DATETIME(6),
@@ -366,9 +366,9 @@ USE petshop;
 
 -- Dữ liệu mẫu cho bảng users
 INSERT INTO users (user_id, username, email, password_hash, full_name, avatar, phone_number, role, is_active, created_at, updated_at) VALUES
-('U001', 'nguyen_van_a', 'nguyenvana@gmail.com', 'hashed_password_1', 'Nguyễn Văn A', 'https://i.imgur.com/avatar1.jpg', '0901234567', 'CUSTOMER', 1, '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
+('U001', 'nguyen_van_a', 'nguyenvana@gmail.com', '$2a$10$lTdmID7ZcabRDtbtyUONruTs1iyk/4ZEwS3z87fNYMPa3m6kxJFEW', 'Nguyễn Văn A', 'https://i.imgur.com/avatar1.jpg', '0901234567', 'CUSTOMER', 1, '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 ('U002', 'tran_thi_b', 'tranthib@gmail.com', 'hashed_password_2', 'Trần Thị B', 'https://i.imgur.com/avatar2.jpg', '0902345678', 'CUSTOMER', 1, '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
-('U003', 'admin_petshop', 'admin@petshop.com', 'hashed_password_3', 'Quản Trị Petshop', 'https://i.imgur.com/avatar3.jpg', '0903456789', 'ADMIN', 1, '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
+('U003', 'admin_petshop', 'admin@petshop.com', '$2a$10$lTdmID7ZcabRDtbtyUONruTs1iyk/4ZEwS3z87fNYMPa3m6kxJFEW', 'Quản Trị Petshop', 'https://i.imgur.com/avatar3.jpg', '0903456789', 'ADMIN', 1, '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 ('U004', 'le_van_c', 'levanc@gmail.com', 'hashed_password_4', 'Lê Văn C', 'https://i.imgur.com/avatar4.jpg', '0904567890', 'CUSTOMER', 1, '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 ('U005', 'pham_thi_d', 'phamthid@gmail.com', 'hashed_password_5', 'Phạm Thị D', 'https://i.imgur.com/avatar5.jpg', '0905678901', 'CUSTOMER', 1, '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 ('U006', 'hoang_van_e', 'hoangvane@gmail.com', 'hashed_password_6', 'Hoàng Văn E', 'https://i.imgur.com/avatar6.jpg', '0906789012', 'CUSTOMER', 1, '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
@@ -746,7 +746,7 @@ INSERT INTO article_comments (comment_id, article_id, user_id, content, created_
 ('AC010', 'AR010', 'U001', 'Tiêm phòng đúng lịch rất quan trọng, cảm ơn bài viết!', '2025-08-11 14:26:00', '2025-08-11 14:26:00');
 
 -- Dữ liệu mẫu cho bảng notifications
-INSERT INTO notifications (notification_id, user_id, title, content, typeNote, is_read, created_at) VALUES
+INSERT INTO notifications (notification_id, user_id, title, content, type_note, is_read, created_at) VALUES
 ('N001', 'U001', 'Đơn hàng O001 đang được chuẩn bị', 'Đơn hàng của bạn đã được xác nhận và đang chuẩn bị giao.', 'ORDER_UPDATE', 0, '2025-08-11 14:26:00'),
 ('N002', 'U002', 'Đơn hàng O002 đã được giao', 'Đơn hàng của bạn đã được giao thành công.', 'ORDER_UPDATE', 0, '2025-08-11 14:26:00'),
 ('N003', 'U004', 'Khuyến mãi mới', 'Khuyến mãi POODLE20 giảm 20% cho Poodle, áp dụng ngay!', 'PROMOTION', 0, '2025-08-11 14:26:00'),
@@ -762,15 +762,15 @@ INSERT INTO notifications (notification_id, user_id, title, content, typeNote, i
 INSERT INTO vaccines
 (vaccine_id, user_id, pet_id, vaccine_name, vaccine_type, description, file, status, note, start_date, end_date)
 VALUES
-('V001', 'U001', 'P001', 'Vaccine Dại', 'Virus', 'Phòng bệnh dại cho chó', 'files/vaccine_rabies_P001.pdf', 'Đã tiêm', 'Tiêm mũi nhắc sau 1 năm', '2025-08-01 09:30:00', '2026-08-01 09:30:00'),
-('V002', 'U002', 'P002', 'Vaccine 7 bệnh', 'Tổng hợp', 'Phòng 7 bệnh phổ biến ở chó con', 'files/vaccine_7benh_P002.pdf', 'Đã tiêm', 'Theo dõi phản ứng 24h', '2025-07-20 10:00:00', '2026-07-20 10:00:00'),
-('V003', 'U003', 'P003', 'Vaccine Care', 'Virus', 'Phòng bệnh Care ở chó', 'files/vaccine_care_P003.pdf', 'Đang chờ', 'Chờ xác nhận lịch tiêm từ bác sĩ', '2025-10-10 00:00:00', NULL),
-('V004', 'U004', 'P004', 'Vaccine Parvo', 'Virus', 'Phòng bệnh Parvo', 'files/vaccine_parvo_P004.pdf', 'Chưa tiêm', 'Dự kiến tiêm trong tháng 10', NULL, NULL),
-('V005', 'U005', 'P005', 'Vaccine Leptospira', 'Vi khuẩn', 'Phòng bệnh do vi khuẩn Leptospira', 'files/vaccine_lepto_P005.pdf', 'Đã tiêm', 'Mũi đầu tiên đã hoàn thành', '2025-05-15 08:45:00', '2026-05-15 08:45:00'),
-('V006', 'U006', 'P006', 'Vaccine Dại', 'Virus', 'Phòng bệnh dại cho mèo', 'files/vaccine_rabies_cat_P006.pdf', 'Đã tiêm', 'Cần tiêm nhắc sau 1 năm', '2025-06-12 14:15:00', '2026-06-12 14:15:00'),
-('V007', 'U007', 'P007', 'Vaccine FVRCP', 'Tổng hợp', 'Phòng 3 bệnh cho mèo con', 'files/vaccine_fvrcp_P007.pdf', 'Đang chờ', 'Đặt lịch lại vì mưa', '2025-10-12 00:00:00', NULL),
-('V008', 'U008', 'P008', 'Vaccine Bordetella', 'Vi khuẩn', 'Phòng ho cũi ở chó', 'files/vaccine_bordetella_P008.pdf', 'Chưa tiêm', 'Chờ bác sĩ xác nhận', NULL, NULL),
-('V009', 'U009', 'P009', 'Vaccine Coronavirus', 'Virus', 'Phòng bệnh viêm ruột do Coronavirus', 'files/vaccine_corona_P009.pdf', 'Đã tiêm', 'Không có phản ứng phụ', '2025-04-02 13:20:00', '2026-04-02 13:20:00'),
-('V010', 'U010', 'P010', 'Vaccine Lyme', 'Vi khuẩn', 'Phòng bệnh Lyme do ve truyền', 'files/vaccine_lyme_P010.pdf', 'Chưa tiêm', 'Đang chờ lịch khám tổng quát', NULL, NULL);
+('VC001', 'U001', 'P001', 'Vaccine Dại', 'Virus', 'Phòng bệnh dại cho chó', 'files/vaccine_rabies_P001.pdf', 'Đã tiêm', 'Tiêm mũi nhắc sau 1 năm', '2025-08-01 09:30:00', '2026-08-01 09:30:00'),
+('VC002', 'U002', 'P002', 'Vaccine 7 bệnh', 'Tổng hợp', 'Phòng 7 bệnh phổ biến ở chó con', 'files/vaccine_7benh_P002.pdf', 'Đã tiêm', 'Theo dõi phản ứng 24h', '2025-07-20 10:00:00', '2026-07-20 10:00:00'),
+('VC003', 'U003', 'P003', 'Vaccine Care', 'Virus', 'Phòng bệnh Care ở chó', 'files/vaccine_care_P003.pdf', 'Đang chờ', 'Chờ xác nhận lịch tiêm từ bác sĩ', '2025-10-10 00:00:00', NULL),
+('VC004', 'U004', 'P004', 'Vaccine Parvo', 'Virus', 'Phòng bệnh Parvo', 'files/vaccine_parvo_P004.pdf', 'Chưa tiêm', 'Dự kiến tiêm trong tháng 10', NULL, NULL),
+('VC005', 'U005', 'P005', 'Vaccine Leptospira', 'Vi khuẩn', 'Phòng bệnh do vi khuẩn Leptospira', 'files/vaccine_lepto_P005.pdf', 'Đã tiêm', 'Mũi đầu tiên đã hoàn thành', '2025-05-15 08:45:00', '2026-05-15 08:45:00'),
+('VC006', 'U006', 'P006', 'Vaccine Dại', 'Virus', 'Phòng bệnh dại cho mèo', 'files/vaccine_rabies_cat_P006.pdf', 'Đã tiêm', 'Cần tiêm nhắc sau 1 năm', '2025-06-12 14:15:00', '2026-06-12 14:15:00'),
+('VC007', 'U007', 'P007', 'Vaccine FVRCP', 'Tổng hợp', 'Phòng 3 bệnh cho mèo con', 'files/vaccine_fvrcp_P007.pdf', 'Đang chờ', 'Đặt lịch lại vì mưa', '2025-10-12 00:00:00', NULL),
+('VC008', 'U008', 'P008', 'Vaccine Bordetella', 'Vi khuẩn', 'Phòng ho cũi ở chó', 'files/vaccine_bordetella_P008.pdf', 'Chưa tiêm', 'Chờ bác sĩ xác nhận', NULL, NULL),
+('VC009', 'U009', 'P009', 'Vaccine Coronavirus', 'Virus', 'Phòng bệnh viêm ruột do Coronavirus', 'files/vaccine_corona_P009.pdf', 'Đã tiêm', 'Không có phản ứng phụ', '2025-04-02 13:20:00', '2026-04-02 13:20:00'),
+('VC010', 'U010', 'P010', 'Vaccine Lyme', 'Vi khuẩn', 'Phòng bệnh Lyme do ve truyền', 'files/vaccine_lyme_P010.pdf', 'Chưa tiêm', 'Đang chờ lịch khám tổng quát', NULL, NULL);
 
 

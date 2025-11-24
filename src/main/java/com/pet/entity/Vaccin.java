@@ -42,7 +42,7 @@ public class Vaccin {
     private String file;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", columnDefinition = "ENUM('Đã tiêm', 'Chưa tiêm', 'Đang chờ') DEFAULT 'Chưa tiêm'")
+    @Column(name = "status")
     private VaccineStatus status = VaccineStatus.CHUA_TIEM;
 
     @Column(name = "note", columnDefinition = "TEXT")
