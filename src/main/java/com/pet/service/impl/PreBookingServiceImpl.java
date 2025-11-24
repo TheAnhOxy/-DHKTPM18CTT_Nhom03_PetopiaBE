@@ -111,8 +111,6 @@ public class PreBookingServiceImpl implements PreBookingService {
     private void createNotification(PreBooking booking, String note) {
         Notification noti = new Notification();
         noti.setNotificationId(generateNotificationId());
-        // --------------------------
-
         noti.setUser(booking.getUser());
         noti.setTypeNote(NotificationType.ORDER_UPDATE);
         noti.setIsRead(false);
