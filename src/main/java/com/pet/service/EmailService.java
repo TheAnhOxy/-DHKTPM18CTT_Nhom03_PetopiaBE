@@ -14,11 +14,12 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     @Autowired
-    private JavaMailSender mailSender;
+    private JavaMailSender mailSender ;
 
     @Async
     public void sendVaccineNotification(String toEmail, String userName, String vaccineName, String petNames, String dates) {
         try {
+            log.info("Đang bắt đầu gửi email tới: {}", toEmail);
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
@@ -34,18 +35,19 @@ public class EmailService {
                         <p><strong>Thú cưng:</strong> %s</p>
                         <p><strong>Thời gian dự kiến:</strong> %s</p>
                     </div>
-                    <p>Vui lòng sắp xếp thời gian đưa các bé đến đúng lịch nhé!</p>
                     <br/>
                     <p style="color: #7f8c8d;">Trân trọng,<br/>Đội ngũ Petopia</p>
                 </div>
                 """, userName, vaccineName, petNames, dates);
 
-            helper.setText(content, true); // true = html
+            helper.setText(content, true);
             mailSender.send(message);
-            log.info("Email sent successfully to {}", toEmail);
+            log.info("Gửi email thành công!");
 
-        } catch (MessagingException e) {
-            log.error("Failed to send email", e);
+        } catch (Exception e) {
+            // <--- QUAN TRỌNG: Catch Exception thay vì MessagingException để bắt cả lỗi Auth
+            log.error("Gửi email thất bại (Nhưng vẫn tiếp tục xử lý): {}", e.getMessage());
+            // KHÔNG throw exception lại, để chương trình chạy tiếp
         }
     }
 }
