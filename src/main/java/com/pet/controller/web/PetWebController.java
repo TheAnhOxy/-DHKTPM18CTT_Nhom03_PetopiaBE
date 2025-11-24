@@ -33,7 +33,7 @@ public class PetWebController {
     ) {
         PageResponse<PetForListResponseDTO> pets = petService.getAllPetsWithStatusActive(page, size);
         if (pets == null || pets.getContent().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            return ResponseEntity.noContent().build(); // 204
         }
         return ResponseEntity.ok(pets);
     }
@@ -42,7 +42,7 @@ public class PetWebController {
         request.validate();
         PageResponse<PetForListResponseDTO> result = petService.advanceSearch(request);
         if (result == null || result.getContent().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            return ResponseEntity.noContent().build(); // 204
         }
         return ResponseEntity.ok(result);
     }
@@ -50,12 +50,8 @@ public class PetWebController {
     public ResponseEntity<ApiResponse> getPetById(@PathVariable String id) {
         PetResponseDTO pet = petService.getPetById(id);
 
-        if (pet == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.builder()
-                            .status(HttpStatus.NOT_FOUND.value())
-                            .message("Không tìm thấy thú cưng")
-                            .build());
+        if (pet == null ) {
+            return ResponseEntity.noContent().build(); // 204
         }
 
         return ResponseEntity.ok(
