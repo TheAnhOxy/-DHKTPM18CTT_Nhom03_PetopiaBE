@@ -49,6 +49,13 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    public PageResponse<ReviewResponseDTO> getReviewsByPetId(String petId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Review> reviewPage = reviewRepository.findByPet_PetIdOrderByCreatedAtDesc(petId, pageable);
+        return reviewConverter.toPageResponse(reviewPage);
+    }
+
+    @Override
     @Transactional
     public ReviewResponseDTO replyToReview(String reviewId, ReviewReplyRequestDTO replyRequest) {
         Review review = reviewRepository.findById(reviewId)
