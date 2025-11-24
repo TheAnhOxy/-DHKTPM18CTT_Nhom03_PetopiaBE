@@ -22,5 +22,12 @@ WHERE u.username = :identifier
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
 
+    @Query("SELECT u.userId FROM User u ORDER BY u.userId DESC LIMIT 1")
+    Optional<String> findLastUserId();
 
+    Optional<User> findByPhoneNumber(String phoneNumber);
+    Optional<User> findByEmail(String email);
+
+
+    boolean existsByPhoneNumber(String phoneNumber);
 }
