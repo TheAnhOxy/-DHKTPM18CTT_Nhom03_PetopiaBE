@@ -110,7 +110,9 @@ public class PreBookingServiceImpl implements PreBookingService {
 
     private void createNotification(PreBooking booking, String note) {
         Notification noti = new Notification();
-        noti.setNotificationId("N" + System.currentTimeMillis());
+        noti.setNotificationId(generateNotificationId());
+        // --------------------------
+
         noti.setUser(booking.getUser());
         noti.setTypeNote(NotificationType.ORDER_UPDATE);
         noti.setIsRead(false);
@@ -120,5 +122,16 @@ public class PreBookingServiceImpl implements PreBookingService {
         noti.setContent("Yêu cầu đặt trước bé " + booking.getPet().getName() + " của bạn " + statusText + ". Ghi chú: " + (note != null ? note : ""));
 
         notificationRepository.save(noti);
+    }
+
+    private String generateNotificationId() {
+        String lastId = notificationRepository.findLastNotificationId().orElse("N000");
+
+        try {
+            int num = Integer.parseInt(lastId.substring(1));
+            return String.format("N%03d", num + 1);
+        } catch (NumberFormatException e) {
+            return "N" + String.valueOf(System.currentTimeMillis()).substring(4);
+        }
     }
 }

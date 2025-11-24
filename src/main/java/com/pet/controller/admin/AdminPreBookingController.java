@@ -30,7 +30,7 @@ public class AdminPreBookingController {
     }
 
     // Admin duyệt/hủy đơn (Kèm gửi mail)
-    @PutMapping("/admin/{bookingId}/status")
+    @PutMapping("/{bookingId}/status")
     public ResponseEntity<ApiResponse> updateStatus(
             @PathVariable String bookingId,
             @Valid @RequestBody PreBookingStatusDTO request) {
