@@ -1,6 +1,7 @@
 package com.pet.controller.admin;
 
 import com.pet.entity.User;
+import com.pet.enums.BookingStatus;
 import com.pet.modal.request.PreBookingRequestDTO;
 import com.pet.modal.request.PreBookingStatusDTO;
 import com.pet.modal.response.ApiResponse;
@@ -18,14 +19,17 @@ public class AdminPreBookingController {
     @Autowired
     private PreBookingServiceImpl preBookingService;
 
-    @GetMapping("/admin/all")
+    @GetMapping("/all")
     public ResponseEntity<ApiResponse> getAllPreBookings(
+            @RequestParam(required = false) BookingStatus status, // Lọc theo trạng thái
+            @RequestParam(required = false) String keyword,       // Tìm theo tên Pet/User
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         return ResponseEntity.ok(ApiResponse.builder()
                 .status(200)
-                .data(preBookingService.getAllPreBookings(page, size))
+                .message("Lấy danh sách thành công")
+                .data(preBookingService.getAllPreBookings(status, keyword, page, size))
                 .build());
     }
 

@@ -21,6 +21,7 @@ import com.pet.service.PreBookingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -92,7 +93,6 @@ public class PreBookingServiceImpl implements PreBookingService {
         return preBookingConverter.toPageResponse(bookings);
     }
 
-    //  Lấy tất cả cho Admin
     @Override
     public PageResponse<PreBookingResponseDTO> getAllPreBookings(int page, int size) {
         return preBookingConverter.toPageResponse(preBookingRepository.findAll(PageRequest.of(page, size)));
@@ -106,6 +106,14 @@ public class PreBookingServiceImpl implements PreBookingService {
         } catch (NumberFormatException e) {
             return "PB" + System.currentTimeMillis();
         }
+    }
+
+    @Override
+    public PageResponse<PreBookingResponseDTO> getAllPreBookings(BookingStatus status, String keyword, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<PreBooking> result = preBookingRepository.searchBookings(status, keyword, pageable);
+
+        return preBookingConverter.toPageResponse(result);
     }
 
     private void createNotification(PreBooking booking, String note) {

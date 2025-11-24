@@ -1,5 +1,6 @@
 package com.pet.service;
 
+import com.pet.enums.BookingStatus;
 import com.pet.modal.request.PreBookingRequestDTO;
 import com.pet.modal.request.PreBookingStatusDTO;
 import com.pet.modal.response.PageResponse;
@@ -14,5 +15,6 @@ public interface  PreBookingService {
     PageResponse<PreBookingResponseDTO> getMyPreBookings(String userId, int page, int size);
 
     PageResponse<PreBookingResponseDTO> getAllPreBookings(int page, int size);
+    PageResponse<PreBookingResponseDTO> getAllPreBookings(BookingStatus status, String keyword, int page, int size);
 
 }

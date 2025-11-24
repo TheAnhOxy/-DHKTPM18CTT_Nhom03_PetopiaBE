@@ -21,5 +21,6 @@ public interface ServiceManagement {
 
     // Admin: View all bookings
     PageResponse<BookingResponseDTO> getAllBookings(int page, int size);
+    PageResponse<BookingResponseDTO> getAllBookings(String keyword, int page, int size);
 
 }

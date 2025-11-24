@@ -74,6 +74,12 @@ public class ServiceServiceImpl implements ServiceManagement {
         serviceRepository.deleteById(id);
     }
 
+    @Override
+    public PageResponse<BookingResponseDTO> getAllBookings(String keyword, int page, int size) {
+        Page<BookingService> bookings = bookingRepository.searchBookings(keyword, PageRequest.of(page, size));
+        return serviceConverter.toBookingPageResponse(bookings);
+    }
+
     // ================= USER: BOOKING SERVICES =================
 
     @Override
