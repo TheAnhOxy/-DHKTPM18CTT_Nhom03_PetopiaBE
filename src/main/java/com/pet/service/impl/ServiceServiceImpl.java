@@ -79,7 +79,6 @@ public class ServiceServiceImpl implements ServiceManagement {
     @Override
     @Transactional
     public BookingResponseDTO createBooking(String userId, BookingRequestDTO request) {
-        // 1. Lấy User
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -111,7 +110,7 @@ public class ServiceServiceImpl implements ServiceManagement {
         return serviceConverter.toBookingPageResponse(bookings);
     }
 
-    
+
 
     private String generateServiceId() {
         String lastId = serviceRepository.findLastServiceId().orElse("S000");
@@ -125,13 +124,13 @@ public class ServiceServiceImpl implements ServiceManagement {
     }
 
     private String generateBookingId() {
-        String lastId = bookingRepository.findLastBookingId().orElse("PB000");
+        String lastId = bookingRepository.findLastBookingId().orElse("BS000");
 
         try {
             int num = Integer.parseInt(lastId.substring(2));
             return String.format("PB%03d", num + 1);
         } catch (NumberFormatException e) {
-            return "PB" + System.currentTimeMillis();
+            return "BS" + System.currentTimeMillis();
         }
     }
 }
