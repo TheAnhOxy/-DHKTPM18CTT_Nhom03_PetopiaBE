@@ -19,7 +19,7 @@ public class BookingController {
     @Autowired
     private ServiceManagement serviceManagement;
 
-    // 1. User đặt lịch
+    // User đặt lịch
     @PostMapping
     public ResponseEntity<ApiResponse> createBooking(
             @AuthenticationPrincipal User currentUser,
@@ -33,7 +33,7 @@ public class BookingController {
                         .build());
     }
 
-    // 2. User xem lịch sử đặt của mình
+    //  User xem lịch sử đặt của mình
     @GetMapping("/me")
     public ResponseEntity<ApiResponse> getMyBookings(
             @AuthenticationPrincipal User currentUser,
@@ -46,7 +46,6 @@ public class BookingController {
                 .build());
     }
 
-    // 3. Admin xem tất cả các lịch đặt
     @GetMapping("/admin/all")
     public ResponseEntity<ApiResponse> getAllBookings(
             @RequestParam(defaultValue = "0") int page,
@@ -58,7 +57,6 @@ public class BookingController {
                 .build());
     }
 
-    // 4. Public API: Ai cũng xem được danh sách dịch vụ để đặt
     @GetMapping("/services")
     public ResponseEntity<ApiResponse> getPublicServices(
             @RequestParam(defaultValue = "0") int page,
