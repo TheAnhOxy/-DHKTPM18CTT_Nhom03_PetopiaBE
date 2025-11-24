@@ -111,16 +111,27 @@ public class ServiceServiceImpl implements ServiceManagement {
         return serviceConverter.toBookingPageResponse(bookings);
     }
 
+    
 
     private String generateServiceId() {
         String lastId = serviceRepository.findLastServiceId().orElse("S000");
-        int num = Integer.parseInt(lastId.substring(3));
-        return String.format("S%03d", num + 1);
+
+        try {
+            int num = Integer.parseInt(lastId.substring(1));
+            return String.format("S%03d", num + 1);
+        } catch (NumberFormatException e) {
+            return "S" + System.currentTimeMillis();
+        }
     }
 
     private String generateBookingId() {
         String lastId = bookingRepository.findLastBookingId().orElse("PB000");
-        int num = Integer.parseInt(lastId.substring(2));
-        return String.format("PB%03d", num + 1);
+
+        try {
+            int num = Integer.parseInt(lastId.substring(2));
+            return String.format("PB%03d", num + 1);
+        } catch (NumberFormatException e) {
+            return "PB" + System.currentTimeMillis();
+        }
     }
 }
