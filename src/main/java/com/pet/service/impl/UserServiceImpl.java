@@ -3,22 +3,27 @@ package com.pet.service.impl;
 import com.pet.converter.UserConverter;
 import com.pet.entity.Address;
 import com.pet.entity.User;
+import com.pet.enums.UserRole;
 import com.pet.exception.ResourceNotFoundException;
 import com.pet.modal.request.*;
 import com.pet.modal.response.*;
 import com.pet.repository.AddressRepository;
 import com.pet.repository.UserRepository;
 import com.pet.service.IUserService;
+import com.pet.utils.StringUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -174,6 +179,78 @@ public class UserServiceImpl implements IUserService {
             return String.format("A%03d", num + 1);
         } catch (Exception e) {
             return "AD" + System.currentTimeMillis();
+        }
+    }
+
+    @Override
+    @Transactional
+    public UserResponseDTO saveUser(UserSaveRequestDTO request) {
+        User user;
+        if (StringUtil.isNotEmpty(request.getUserId())) {
+            user = userRepository.findById(request.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getUserId()));
+            checkDuplicateForUpdate(request.getPhoneNumber(), request.getEmail(), user.getUserId());
+            if (request.getFullName() != null) user.setFullName(request.getFullName());
+            if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
+            if (request.getEmail() != null) user.setEmail(request.getEmail());
+            if (request.getAvatar() != null) user.setAvatar(request.getAvatar());
+            if (request.getRole() != null) user.setRole(request.getRole());
+            if (request.getIsActive() != null) user.setIsActive(request.getIsActive());
+            if (StringUtil.isNotEmpty(request.getPassword())) {
+                user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+            }
+        }
+        else {
+            if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+                throw new DataIntegrityViolationException("Số điện thoại đã tồn tại");
+            }
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new DataIntegrityViolationException("Email đã tồn tại");
+            }
+            if (StringUtils.isEmpty(request.getPassword())) {
+                throw new IllegalArgumentException("Mật khẩu là bắt buộc khi tạo mới");
+            }
+
+            user = User.builder()
+                    .userId(generateUserId()) // Sinh ID
+                    .fullName(request.getFullName())
+                    .phoneNumber(request.getPhoneNumber())
+                    .username(request.getPhoneNumber())
+                    .email(request.getEmail())
+                    .passwordHash(passwordEncoder.encode(request.getPassword()))
+                    .avatar(request.getAvatar())
+                    .role(request.getRole() != null ? request.getRole() : UserRole.CUSTOMER)
+                    .isActive(true)
+                    .build();
+        }
+
+        User savedUser = userRepository.save(user);
+        return userConverter.toUserResponseDTO(savedUser);
+    }
+
+    private void checkDuplicateForUpdate(String newPhone, String newEmail, String currentUserId) {
+        if (newPhone != null) {
+            Optional<User> userByPhone = userRepository.findByPhoneNumber(newPhone);
+            if (userByPhone.isPresent() && !userByPhone.get().getUserId().equals(currentUserId)) {
+                throw new DataIntegrityViolationException("Số điện thoại đã được sử dụng bởi người khác");
+            }
+        }
+        if (newEmail != null) {
+            Optional<User> userByEmail = userRepository.findByEmail(newEmail);
+            if (userByEmail.isPresent() && !userByEmail.get().getUserId().equals(currentUserId)) {
+                throw new DataIntegrityViolationException("Email đã được sử dụng bởi người khác");
+            }
+        }
+    }
+
+    private String generateUserId() {
+        String lastId = userRepository.findLastUserId().orElse(null);
+        if (lastId == null) return "U001";
+        try {
+            int number = Integer.parseInt(lastId.substring(1));
+            return String.format("U%03d", number + 1);
+        } catch (NumberFormatException e) {
+            return "U" + System.currentTimeMillis();
         }
     }
 }

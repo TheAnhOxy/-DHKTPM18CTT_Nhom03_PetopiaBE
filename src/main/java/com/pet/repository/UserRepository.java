@@ -19,5 +19,9 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("SELECT u.userId FROM User u ORDER BY u.userId DESC LIMIT 1")
     Optional<String> findLastUserId();
 
+    Optional<User> findByPhoneNumber(String phoneNumber);
+    Optional<User> findByEmail(String email);
 
+
+    boolean existsByPhoneNumber(String phoneNumber);
 }

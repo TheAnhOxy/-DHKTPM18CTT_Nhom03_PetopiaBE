@@ -19,4 +19,6 @@ public interface IUserService {
     AddressResponseDTO updateAddress(String userId, String addressId, AddressRequestDTO request);
     void deleteAddress(String userId, String addressId);
     void setDefaultAddress(String userId, String addressId);
+
+    UserResponseDTO saveUser(UserSaveRequestDTO request);
 }

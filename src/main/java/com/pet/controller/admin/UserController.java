@@ -18,9 +18,6 @@ public class UserController {
     @Autowired
     private IUserService userService;
 
-
-
-
     @GetMapping("/addresses")
     public ResponseEntity<ApiResponse> getMyAddresses(@AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.builder()
@@ -61,5 +58,20 @@ public class UserController {
             @PathVariable String addressId) {
         userService.setDefaultAddress(currentUser.getUserId(), addressId);
         return ResponseEntity.ok(ApiResponse.builder().status(200).message("Đã đặt làm địa chỉ mặc định").build());
+    }
+
+    @PostMapping("/save")
+    public ResponseEntity<ApiResponse> saveUser(@RequestBody UserSaveRequestDTO request) {
+        var result = userService.saveUser(request);
+        String action = (request.getUserId() == null || request.getUserId().isEmpty())
+                ? "Tạo mới" : "Cập nhật";
+
+        return ResponseEntity.ok(
+                ApiResponse.builder()
+                        .status(200)
+                        .message(action + " người dùng thành công")
+                        .data(result)
+                        .build()
+        );
     }
 }
