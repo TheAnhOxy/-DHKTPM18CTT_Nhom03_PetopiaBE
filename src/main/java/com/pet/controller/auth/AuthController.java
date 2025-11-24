@@ -31,4 +31,6 @@ public class AuthController {
         System.out.println("Controller nhan dang nhap user: " + request.getIdentifier());
         return ResponseEntity.ok(service.login(request));
     }
+
+
 }

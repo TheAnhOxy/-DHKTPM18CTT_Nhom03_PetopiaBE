@@ -27,7 +27,6 @@ WHERE u.username = :identifier
 
     Optional<User> findByPhoneNumber(String phoneNumber);
     Optional<User> findByEmail(String email);
-
-
+    Optional<User> findByUsernameContainingIgnoreCase(String userName);
     boolean existsByPhoneNumber(String phoneNumber);
 }
