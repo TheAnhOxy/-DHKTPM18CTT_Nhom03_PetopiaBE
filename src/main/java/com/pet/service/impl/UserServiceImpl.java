@@ -181,21 +181,23 @@ public class UserServiceImpl implements IUserService {
             return "AD" + System.currentTimeMillis();
         }
     }
-
     @Override
     @Transactional
     public UserResponseDTO saveUser(UserSaveRequestDTO request) {
         User user;
         if (StringUtil.isNotEmpty(request.getUserId())) {
             user = userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getUserId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found: " + request.getUserId()));
+
             checkDuplicateForUpdate(request.getPhoneNumber(), request.getEmail(), user.getUserId());
+
             if (request.getFullName() != null) user.setFullName(request.getFullName());
             if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
             if (request.getEmail() != null) user.setEmail(request.getEmail());
             if (request.getAvatar() != null) user.setAvatar(request.getAvatar());
             if (request.getRole() != null) user.setRole(request.getRole());
             if (request.getIsActive() != null) user.setIsActive(request.getIsActive());
+
             if (StringUtil.isNotEmpty(request.getPassword())) {
                 user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
             }
@@ -212,7 +214,7 @@ public class UserServiceImpl implements IUserService {
             }
 
             user = User.builder()
-                    .userId(generateUserId()) // Sinh ID
+                    .userId(generateUserId())
                     .fullName(request.getFullName())
                     .phoneNumber(request.getPhoneNumber())
                     .username(request.getPhoneNumber())
@@ -223,8 +225,30 @@ public class UserServiceImpl implements IUserService {
                     .isActive(true)
                     .build();
         }
-
         User savedUser = userRepository.save(user);
+
+        if (request.getAddresses() != null && !request.getAddresses().isEmpty()) {
+            for (AddressRequestDTO addrReq : request.getAddresses()) {
+                Address address = new Address();
+
+                address.setAddressId(generateAddressId());
+                address.setUser(savedUser);
+
+                address.setStreet(addrReq.getStreet());
+                address.setWard(addrReq.getWard());
+                address.setDistrict(addrReq.getDistrict());
+                address.setProvince(addrReq.getProvince());
+                address.setCountry(addrReq.getCountry() != null ? addrReq.getCountry() : "Vietnam");
+                boolean isDefault = addrReq.getIsDefault() != null && addrReq.getIsDefault();
+                address.setIsDefault(isDefault);
+                
+                if (isDefault) {
+                    addressRepository.setAllAddressesNonDefault(savedUser.getUserId());
+                }
+
+                addressRepository.save(address);
+            }
+        }
         return userConverter.toUserResponseDTO(savedUser);
     }
 
