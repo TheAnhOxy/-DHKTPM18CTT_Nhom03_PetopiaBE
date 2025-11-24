@@ -45,9 +45,48 @@ public class EmailService {
             log.info("Gửi email thành công!");
 
         } catch (Exception e) {
-            // <--- QUAN TRỌNG: Catch Exception thay vì MessagingException để bắt cả lỗi Auth
             log.error("Gửi email thất bại (Nhưng vẫn tiếp tục xử lý): {}", e.getMessage());
-            // KHÔNG throw exception lại, để chương trình chạy tiếp
         }
     }
+
+    @Async
+    public void sendPreBookingStatusNotification(String toEmail, String userName, String petName, String status, String note) {
+        try {
+            log.info("Gửi email thông báo trạng thái đặt trước tới: {}", toEmail);
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(toEmail);
+
+            String subject = status.equals("CONFIRMED")
+                    ? "[Petopia] Xác nhận đặt trước thú cưng thành công"
+                    : "[Petopia] Thông báo hủy yêu cầu đặt trước";
+
+            helper.setSubject(subject);
+
+            String color = status.equals("CONFIRMED") ? "#27ae60" : "#c0392b";
+            String statusvn = status.equals("CONFIRMED") ? "ĐÃ XÁC NHẬN" : "ĐÃ HỦY";
+
+            String content = String.format("""
+                    <div style="font-family: Arial, sans-serif; padding: 20px;">
+                        <h2 style="color: #2c3e50;">Xin chào %s,</h2>
+                        <p>Yêu cầu đặt trước thú cưng <strong>%s</strong> của bạn đã được xử lý.</p>
+                        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid %s;">
+                            <p><strong>Trạng thái:</strong> <span style="color: %s; font-weight: bold;">%s</span></p>
+                            <p><strong>Ghi chú từ cửa hàng:</strong> %s</p>
+                        </div>
+                        <p>Nếu có thắc mắc, vui lòng liên hệ hotline.</p>
+                        <br/>
+                        <p style="color: #7f8c8d;">Trân trọng,<br/>Đội ngũ Petopia</p>
+                    </div>
+                    """, userName, petName, color, color, statusvn, (note != null ? note : "Không có"));
+
+            helper.setText(content, true);
+            mailSender.send(message);
+
+        } catch (Exception e) {
+            log.error("Lỗi gửi mail PreBooking: {}", e.getMessage());
+        }
+    }
+
 }
