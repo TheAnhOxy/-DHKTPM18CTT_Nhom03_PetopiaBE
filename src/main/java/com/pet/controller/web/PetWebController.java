@@ -1,13 +1,10 @@
 package com.pet.controller.web;
 
-import com.pet.entity.Pet;
-import com.pet.modal.request.PetRequestDTO;
-
 import com.pet.modal.response.*;
 import com.pet.modal.search.PetSearchRequestDTO;
 import com.pet.service.CategoryService;
 import com.pet.service.PetService;
-import io.swagger.v3.oas.annotations.Operation;
+import com.pet.service.ReviewService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @Slf4j
@@ -25,6 +21,8 @@ public class PetWebController {
     private CategoryService categoryService;
     @Autowired
     private PetService petService;
+    @Autowired
+    private ReviewService reviewService;
 
     @GetMapping()
     public ResponseEntity<PageResponse<PetForListResponseDTO>> getAllPetsWithStatusActive(
@@ -69,6 +67,19 @@ public class PetWebController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(categories);
+    }
+
+    @GetMapping("/{petId}/reviews")
+    public ResponseEntity<PageResponse<ReviewResponseDTO>> getReviewsByPetId(
+            @PathVariable String petId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        PageResponse<ReviewResponseDTO> reviews = reviewService.getReviewsByPetId(petId, page, size);
+        if (reviews == null || reviews.getContent().isEmpty()) {
+            return ResponseEntity.noContent().build(); // 204
+        }
+        return ResponseEntity.ok(reviews);
     }
 
 }
