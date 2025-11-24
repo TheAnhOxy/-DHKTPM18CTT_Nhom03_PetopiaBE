@@ -189,8 +189,9 @@ public class UserServiceImpl implements IUserService {
             user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new ResourceNotFoundException("User not found: " + request.getUserId()));
 
-            checkDuplicateForUpdate(request.getPhoneNumber(), request.getEmail(), user.getUserId());
+            checkDuplicateForUpdate(request.getPhoneNumber(), request.getEmail(), user.getUserId(), request.getUserName());
 
+            if(request.getUserName() != null) user.setUsername(request.getUserName());
             if (request.getFullName() != null) user.setFullName(request.getFullName());
             if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
             if (request.getEmail() != null) user.setEmail(request.getEmail());
@@ -209,6 +210,9 @@ public class UserServiceImpl implements IUserService {
             if (userRepository.existsByEmail(request.getEmail())) {
                 throw new DataIntegrityViolationException("Email đã tồn tại");
             }
+            if (userRepository.existsByUsername(request.getUserName())) {
+                throw new DataIntegrityViolationException("Username đã tồn tại");
+            }
             if (StringUtils.isEmpty(request.getPassword())) {
                 throw new IllegalArgumentException("Mật khẩu là bắt buộc khi tạo mới");
             }
@@ -217,7 +221,7 @@ public class UserServiceImpl implements IUserService {
                     .userId(generateUserId())
                     .fullName(request.getFullName())
                     .phoneNumber(request.getPhoneNumber())
-                    .username(request.getPhoneNumber())
+                    .username(request.getUserName())
                     .email(request.getEmail())
                     .passwordHash(passwordEncoder.encode(request.getPassword()))
                     .avatar(request.getAvatar())
@@ -241,7 +245,7 @@ public class UserServiceImpl implements IUserService {
                 address.setCountry(addrReq.getCountry() != null ? addrReq.getCountry() : "Vietnam");
                 boolean isDefault = addrReq.getIsDefault() != null && addrReq.getIsDefault();
                 address.setIsDefault(isDefault);
-                
+
                 if (isDefault) {
                     addressRepository.setAllAddressesNonDefault(savedUser.getUserId());
                 }
@@ -252,11 +256,17 @@ public class UserServiceImpl implements IUserService {
         return userConverter.toUserResponseDTO(savedUser);
     }
 
-    private void checkDuplicateForUpdate(String newPhone, String newEmail, String currentUserId) {
+    private void checkDuplicateForUpdate(String newPhone, String newEmail, String currentUserId, String newUserName) {
         if (newPhone != null) {
             Optional<User> userByPhone = userRepository.findByPhoneNumber(newPhone);
             if (userByPhone.isPresent() && !userByPhone.get().getUserId().equals(currentUserId)) {
                 throw new DataIntegrityViolationException("Số điện thoại đã được sử dụng bởi người khác");
+            }
+        }
+        if(newUserName != null){
+            Optional<User> userByUserName = userRepository.findByUsernameContainingIgnoreCase(newUserName);
+            if(userByUserName.isPresent() && !userByUserName.get().getUserId().equals(currentUserId)){
+                throw  new DataIntegrityViolationException("Username đã tồn tại !");
             }
         }
         if (newEmail != null) {
