@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/payments")
 public class PaymentController {
 
-    @Autowired private OrderServiceImpl orderService; // Nơi chứa hàm processSePayPayment
+    @Autowired private OrderServiceImpl orderService; 
 
     // API này sẽ được SePay gọi tự động (Bạn cần config trên SePay)
     @PostMapping("/sepay-webhook")
