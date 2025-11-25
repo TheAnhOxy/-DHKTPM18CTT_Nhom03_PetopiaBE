@@ -14,8 +14,8 @@ public class AdminWishlistController {
 
     @Autowired
     private WishlistService wishlistService;
-    
-    @GetMapping("/admin/top-stats")
+
+    @GetMapping("/top-stats")
     public ResponseEntity<ApiResponse> getTopStats(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
