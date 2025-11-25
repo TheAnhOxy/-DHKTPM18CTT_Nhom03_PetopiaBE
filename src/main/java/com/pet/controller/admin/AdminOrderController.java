@@ -18,15 +18,20 @@ public class AdminOrderController {
     @Autowired
     private OrderService orderService;
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse> getDetail(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.builder().status(200).data(orderService.getOrderDetail(id)).build());
+    }
+
     @GetMapping("/all")
     public ResponseEntity<ApiResponse> getAllOrders(
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         return ResponseEntity.ok(ApiResponse.builder()
-                .status(200)
-                .data(orderService.getAllOrders(page, size))
-                .build());
+                .status(200).data(orderService.getAllOrders(status, keyword, page, size)).build());
     }
 
     @PutMapping("/{id}/status")

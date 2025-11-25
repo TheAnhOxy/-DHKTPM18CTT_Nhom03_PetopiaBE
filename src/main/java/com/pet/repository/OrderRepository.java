@@ -1,6 +1,7 @@
 package com.pet.repository;
 
 import com.pet.entity.Order;
+import com.pet.enums.OrderStatus;
 import com.pet.modal.response.TopSellingPetDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,13 +25,12 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     @Query("SELECT COALESCE(SUM(oi.quantity), 0) FROM OrderItem oi JOIN oi.order o WHERE o.status = 'DELIVERED'")
     Long countTotalSoldPets();
 
-    // --- ĐÃ SỬA LẠI ĐOẠN CAST ---
     @Query("SELECT new com.pet.modal.response.TopSellingPetDTO(" +
             "p.petId, " +
             "p.name, " +
             "MIN(pi.imageUrl), " +
             "SUM(oi.quantity), " +
-            "CAST(SUM(oi.priceAtPurchase * oi.quantity) AS double)) " + // <--- Ép kiểu về double tại đây
+            "CAST(SUM(oi.priceAtPurchase * oi.quantity) AS double)) " +
             "FROM OrderItem oi " +
             "JOIN oi.order o " +
             "JOIN oi.pet p " +
@@ -39,4 +39,11 @@ public interface OrderRepository extends JpaRepository<Order, String> {
             "GROUP BY p.petId, p.name " +
             "ORDER BY SUM(oi.quantity) DESC")
     List<TopSellingPetDTO> findTopSellingPets(Pageable pageable);
+
+
+    // ADMIN: Tìm kiếm đa năng (Mã đơn, Tên khách, Trạng thái)
+    @Query("SELECT o FROM Order o WHERE " +
+            "(:status IS NULL OR o.status = :status) AND " +
+            "(:keyword IS NULL OR o.orderId LIKE %:keyword% OR o.user.fullName LIKE %:keyword%)")
+    Page<Order> searchOrders(OrderStatus status, String keyword, Pageable pageable);
 }

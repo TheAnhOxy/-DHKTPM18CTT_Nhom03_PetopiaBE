@@ -18,4 +18,6 @@ public interface AddressRepository extends JpaRepository<Address, String> {
     @Modifying
     @Query("UPDATE Address a SET a.isDefault = false WHERE a.user.userId = :userId")
     void setAllAddressesNonDefault(String userId);
+
+    long countByUser_UserId(String userId);
 }

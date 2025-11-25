@@ -1,6 +1,5 @@
 package com.pet.controller.web;
 
-import com.pet.entity.User;
 import com.pet.enums.OrderStatus;
 import com.pet.modal.request.OrderCreateRequestDTO;
 import com.pet.modal.response.ApiResponse;
@@ -12,15 +11,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import com.pet.entity.User;
+
 @RestController
 @RequestMapping("/orders")
 public class OrderController {
 
-    @Autowired
-    private OrderService orderService;
+    @Autowired private OrderService orderService;
 
-    // --- USER ---
-
+    //  User tạo đơn
     @PostMapping
     public ResponseEntity<ApiResponse> createOrder(
             @AuthenticationPrincipal User currentUser,
@@ -34,26 +33,35 @@ public class OrderController {
                         .build());
     }
 
+    //  User xem đơn của mình
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse> getMyOrders(
-            @AuthenticationPrincipal User currentUser,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-
+    public ResponseEntity<ApiResponse> getMyOrders(@AuthenticationPrincipal User currentUser,
+                                                   @RequestParam(defaultValue = "0") int page,
+                                                   @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(ApiResponse.builder()
                 .status(200)
                 .data(orderService.getMyOrders(currentUser.getUserId(), page, size))
                 .build());
     }
 
+    // Xem chi tiết đơn (User/Admin)
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse> getOrderDetail(@PathVariable String id) {
-        // (Cần thêm logic check quyền: Chỉ user chủ đơn hoặc admin mới xem được)
+    public ResponseEntity<ApiResponse> getDetail(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.builder()
                 .status(200)
-                .data(orderService.getOrderById(id))
+                .data(orderService.getOrderDetail(id))
                 .build());
     }
 
+    // Admin: Quản lý đơn (Có lọc status & tìm kiếm)
+    @GetMapping("/admin/all")
+    public ResponseEntity<ApiResponse> getAllOrders(
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status(200).data(orderService.getAllOrders(status, keyword, page, size)).build());
+    }
 }

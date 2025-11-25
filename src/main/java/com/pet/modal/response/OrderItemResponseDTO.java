@@ -7,6 +7,6 @@ public class OrderItemResponseDTO {
     private String petName;
     private String petImage;
     private Integer quantity;
-    private Double price;
-    private Double totalPrice;
+    private Double price;     // Giá lúc mua
+    private Double totalPrice; // price * quantity
 }

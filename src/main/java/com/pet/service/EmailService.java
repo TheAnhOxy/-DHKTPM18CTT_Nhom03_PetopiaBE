@@ -50,6 +50,25 @@ public class EmailService {
     }
 
     @Async
+    public void sendEmail(String toEmail, String subject, String htmlContent) {
+        try {
+            log.info("Đang gửi email tới: {}", toEmail);
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Gửi email thành công!");
+
+        } catch (Exception e) {
+            log.error("Gửi email thất bại: {}", e.getMessage());
+        }
+    }
+
+    @Async
     public void sendPreBookingStatusNotification(String toEmail, String userName, String petName, String status, String note) {
         try {
             log.info("Gửi email thông báo trạng thái đặt trước tới: {}", toEmail);
@@ -87,6 +106,9 @@ public class EmailService {
         } catch (Exception e) {
             log.error("Lỗi gửi mail PreBooking: {}", e.getMessage());
         }
+
+
+
     }
 
 }

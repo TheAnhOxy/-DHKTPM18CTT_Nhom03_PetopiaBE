@@ -13,8 +13,8 @@ public interface OrderService {
     PageResponse<OrderResponseDTO> getMyOrders(String userId, int page, int size);
 
     // Admin xem tất cả đơn
-    PageResponse<OrderResponseDTO> getAllOrders(int page, int size);
-
+    PageResponse<OrderResponseDTO> getAllOrders(OrderStatus status, String keyword, int page, int size);
+    OrderResponseDTO getOrderDetail(String orderId);
     // Xem chi tiết đơn
     OrderResponseDTO getOrderById(String orderId);
 
