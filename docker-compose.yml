@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  petshop-mysql:
+    image: mysql:8.0
+    container_name: petshop-mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "Theanh@123"
+      MYSQL_DATABASE: "petshop"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - pet-network
+
+  # --- 2. REDIS ---
+  petshop-redis:
+    image: redis:latest
+    container_name: petshop-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - pet-network
+
+  # --- 3. JAVA APP ---
+  petshop-backend:
+    build: .
+    container_name: petshop-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - petshop-mysql
+      - petshop-redis
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://petshop-mysql:3306/petshop
+      SPRING_DATA_REDIS_HOST: petshop-redis
+      SPRING_MAIL_HOST: smtp.gmail.com
+    networks:
+      - pet-network
+
+volumes:
+  mysql_data:
+
+networks:
+  pet-network:
+    driver: bridge
