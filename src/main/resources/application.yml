@@ -33,6 +33,10 @@ management:
       exposure:
         include: '*'
 
+sepay:
+  bank-code: MB
+  account-no: 123456789
+  template: compact
 logging:
   level:
     root: INFO
