@@ -13,25 +13,24 @@ import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, String> {
-
-    // Lấy ID cuối cùng để sinh ORxxx
     @Query("SELECT o.orderId FROM Order o ORDER BY o.orderId DESC LIMIT 1")
     Optional<String> findLastOrderId();
 
-    // Lấy đơn hàng của User
     Page<Order> findByUser_UserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
 
-    // Tính tổng doanh thu (Chỉ tính đơn DELIVERED)
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.status = 'DELIVERED'")
     Double calculateTotalRevenue();
 
-    // Đếm tổng thú cưng đã bán
     @Query("SELECT COALESCE(SUM(oi.quantity), 0) FROM OrderItem oi JOIN oi.order o WHERE o.status = 'DELIVERED'")
     Long countTotalSoldPets();
 
-    // FIX LỖI: Top Selling Pets
+    // --- ĐÃ SỬA LẠI ĐOẠN CAST ---
     @Query("SELECT new com.pet.modal.response.TopSellingPetDTO(" +
-            "p.petId, p.name, MIN(pi.imageUrl), SUM(oi.quantity), SUM(CAST(oi.priceAtPurchase * oi.quantity AS double)) ) " +
+            "p.petId, " +
+            "p.name, " +
+            "MIN(pi.imageUrl), " +
+            "SUM(oi.quantity), " +
+            "CAST(SUM(oi.priceAtPurchase * oi.quantity) AS double)) " + // <--- Ép kiểu về double tại đây
             "FROM OrderItem oi " +
             "JOIN oi.order o " +
             "JOIN oi.pet p " +
@@ -40,5 +39,4 @@ public interface OrderRepository extends JpaRepository<Order, String> {
             "GROUP BY p.petId, p.name " +
             "ORDER BY SUM(oi.quantity) DESC")
     List<TopSellingPetDTO> findTopSellingPets(Pageable pageable);
-
 }
