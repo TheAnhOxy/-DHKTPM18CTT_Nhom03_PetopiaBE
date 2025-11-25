@@ -1,4 +1,4 @@
-package com.pet.controller;
+package com.pet.controller.web;
 
 import com.pet.entity.User;
 import com.pet.modal.request.PreBookingRequestDTO;
