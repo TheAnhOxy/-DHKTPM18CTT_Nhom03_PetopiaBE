@@ -1,0 +1,17 @@
+package com.pet.repository;
+
+import com.pet.entity.Delivery;
+import com.pet.enums.DeliveryStatus;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface DeliveryRepository extends JpaRepository<Delivery, String> {
+
+    // Sửa lại query: Gọi thẳng đến com.pet.enums.DeliveryStatus.TEN_ENUM
+    @Query("SELECT COUNT(d) FROM Delivery d WHERE d.deliveryStatus IN (com.pet.enums.DeliveryStatus.SHIPPED, com.pet.enums.DeliveryStatus.IN_TRANSIT)")
+    Long countShippingOrders();
+}
