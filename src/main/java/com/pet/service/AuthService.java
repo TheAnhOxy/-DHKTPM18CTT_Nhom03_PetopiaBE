@@ -61,17 +61,21 @@ public class AuthService {
 
     public LoginResponseDTO login(LoginRequestDTO request) {
         System.out.println("Dang nhap user: " + request.getIdentifier());
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getIdentifier(),
-                        request.getPassword()
-                )
-        );
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getIdentifier(),
+                            request.getPassword()
+                    )
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Thông tin đăng nhập không đúng");
+        }
         System.out.println("Dang nhap thanh cong");
         var user = userRepository.findByIdentifier(request.getIdentifier())
                 .orElseThrow();
 
-        var token =  jwtUtils.generateToken(user);
+        var token = jwtUtils.generateToken(user);
 
         return LoginResponseDTO.builder()
                 .accessToken(token)
