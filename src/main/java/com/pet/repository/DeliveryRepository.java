@@ -10,7 +10,8 @@ import java.util.List;
 
 @Repository
 public interface DeliveryRepository extends JpaRepository<Delivery, String> {
-    // Đếm số đơn đang vận chuyển (SHIPPED hoặc IN_TRANSIT)
-    @Query("SELECT COUNT(d) FROM Delivery d WHERE d.deliveryStatus IN ('SHIPPED', 'IN_TRANSIT')")
+
+    // Sửa lại query: Gọi thẳng đến com.pet.enums.DeliveryStatus.TEN_ENUM
+    @Query("SELECT COUNT(d) FROM Delivery d WHERE d.deliveryStatus IN (com.pet.enums.DeliveryStatus.SHIPPED, com.pet.enums.DeliveryStatus.IN_TRANSIT)")
     Long countShippingOrders();
 }
