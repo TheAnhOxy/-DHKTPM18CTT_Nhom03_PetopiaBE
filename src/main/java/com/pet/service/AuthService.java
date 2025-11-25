@@ -13,11 +13,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -26,12 +21,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenUtils jwtUtils;
     private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
 
-    private final Map<String, String> otpStorage = new HashMap<>();
-    private final Map<String, Instant> otpExpiry = new HashMap<>();
-
-    private static final long OTP_TTL_SECONDS = 5 * 60; // 5 phút
 
     public LoginResponseDTO register(RegisterRequestDTO request) {
         int index = userRepository.findAll().size() + 1;
@@ -71,61 +61,21 @@ public class AuthService {
 
     public LoginResponseDTO login(LoginRequestDTO request) {
         System.out.println("Dang nhap user: " + request.getIdentifier());
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            request.getIdentifier(),
-                            request.getPassword()
-                    )
-            );
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getIdentifier(),
+                        request.getPassword()
+                )
+        );
         System.out.println("Dang nhap thanh cong");
         var user = userRepository.findByIdentifier(request.getIdentifier())
                 .orElseThrow();
 
-        var token = jwtUtils.generateToken(user);
+        var token =  jwtUtils.generateToken(user);
 
         return LoginResponseDTO.builder()
                 .accessToken(token)
                 .user(user)
                 .build();
-    }
-
-    public void sendOtp(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Email không tồn tại!"));
-
-        String otp = String.format("%06d", new Random().nextInt(999999));
-        otpStorage.put(email, otp);
-        otpExpiry.put(email, Instant.now().plusSeconds(OTP_TTL_SECONDS));
-
-        emailService.sendOtpEmail(email, otp);
-    }
-
-    public boolean verifyOtp(String email, String otp) {
-        String storedOtp = otpStorage.get(email);
-        Instant expiry = otpExpiry.get(email);
-
-        if (storedOtp == null || expiry == null) return false;
-
-        if (Instant.now().isAfter(expiry)) {
-            otpStorage.remove(email);
-            otpExpiry.remove(email);
-            return false;
-        }
-        return storedOtp.equals(otp);
-    }
-
-    public void resetPassword(String email, String newPassword) {
-        if (!otpStorage.containsKey(email)) {
-            throw new RuntimeException("Bạn chưa xác thực OTP hoặc OTP đã hết hạn!");
-        }
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Email không tồn tại!"));
-
-        user.setPasswordHash(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-
-        otpStorage.remove(email);
-        otpExpiry.remove(email);
     }
 }
