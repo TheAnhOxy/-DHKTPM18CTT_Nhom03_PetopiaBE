@@ -6,6 +6,7 @@ import com.pet.enums.*;
 import com.pet.exception.ResourceNotFoundException;
 import com.pet.modal.request.OrderCreateRequestDTO;
 import com.pet.modal.request.OrderItemRequestDTO;
+import com.pet.modal.request.SePayWebhookDTO;
 import com.pet.modal.response.OrderResponseDTO;
 import com.pet.modal.response.PageResponse;
 import com.pet.repository.*;
@@ -70,16 +71,27 @@ public class OrderServiceImpl implements OrderService {
                     .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
         }
 
-        // 3. Tạo Order
+        //  Tạo Order
         Order order = new Order();
         order.setOrderId(generateOrderId());
         order.setUser(user);
         order.setAddress(shippingAddress);
-        order.setPhoneNumber(request.getPhoneNumber()); // Lấy sđt từ form nhập
+        order.setPhoneNumber(request.getPhoneNumber());
         order.setNote(request.getNote());
-        order.setStatus(OrderStatus.PENDING);
-        order.setPaymentStatus(OrderPaymentStatus.UNPAID);
-        order.setShippingFee(30000.0); // Phí ship mặc định
+
+        // --- LOGIC TRẠNG THÁI THEO PAYMENT METHOD ---
+        if (request.getPaymentMethod() == PaymentMethod.COD) {
+            // COD: Mua luôn -> Hoàn thành luôn
+            order.setStatus(OrderStatus.DELIVERED);
+            order.setPaymentStatus(OrderPaymentStatus.PAID);
+        } else {
+            // BANK: Chờ chuyển khoản -> Confirmed nhưng chưa trả tiền
+            order.setStatus(OrderStatus.CONFIRMED);
+            order.setPaymentStatus(OrderPaymentStatus.UNPAID);
+        }
+        // -------------------------------------------
+
+        order.setShippingFee(30000.0);
 
         //  Xử lý Items & Tính tiền (Giữ nguyên logic cũ)
         double itemsTotal = 0;
@@ -98,7 +110,7 @@ public class OrderServiceImpl implements OrderService {
             petRepository.save(pet);
 
             OrderItem oi = new OrderItem();
-            oi.setOrderItemId("OI" + currentTime + (i++));
+            oi.setOrderItemId(generateOrderItemId());
             oi.setOrder(order);
             oi.setPet(pet);
             oi.setQuantity(itemReq.getQuantity());
@@ -136,45 +148,110 @@ public class OrderServiceImpl implements OrderService {
         return addressRepository.save(address);
     }
 
-    // --- Helper: Xử lý Payment & Gửi Mail ---
     private void handlePaymentAndEmail(Order order, PaymentMethod method) {
         Payment payment = new Payment();
         payment.setPaymentId(generatePaymentId());
         payment.setOrder(order);
         payment.setAmount(order.getTotalAmount());
         payment.setPaymentMethod(method);
-        payment.setPaymentStatus(PaymentStatus.PENDING);
         payment.setPaymentDate(LocalDateTime.now());
 
-        String emailSubject;
-        String emailContent;
-
-        // CASE 1: CHUYỂN KHOẢN NGÂN HÀNG (Hiện QR)
         if (method == PaymentMethod.BANK_TRANSFER) {
+            // BANK: Trạng thái PENDING, Tạo QR
+            payment.setPaymentStatus(PaymentStatus.PENDING);
             String content = "THANHTOAN " + order.getOrderId();
             String qrUrl = sePayService.generateQrUrl(order.getTotalAmount(), content);
-
             payment.setPaymentUrl(qrUrl);
             payment.setTransactionId(content);
+            paymentRepository.save(payment);
 
-            emailSubject = "[Petopia] Vui lòng thanh toán đơn hàng #" + order.getOrderId();
-            emailContent = buildBankTransferEmail(order, qrUrl, content);
-        }
-        // CASE 2: TIỀN MẶT (COD) - Không QR
-        else {
+            // Gửi mail Yêu cầu thanh toán
+            String emailSubject = "[Petopia] Vui lòng thanh toán đơn hàng #" + order.getOrderId();
+            String emailContent = buildBankTransferEmail(order, qrUrl, content);
+            if (order.getUser().getEmail() != null) {
+                emailService.sendEmail(order.getUser().getEmail(), emailSubject, emailContent);
+            }
+
+        } else {
+            // COD: Trạng thái SUCCESS luôn (vì coi như trả tiền mặt rồi)
+            payment.setPaymentStatus(PaymentStatus.SUCCESS);
             payment.setPaymentUrl(null);
             payment.setTransactionId(null);
+            paymentRepository.save(payment);
 
-            emailSubject = "[Petopia] Đặt hàng thành công #" + order.getOrderId();
-            emailContent = buildCodEmail(order);
+            // Gửi mail Thành công
+            String emailSubject = "[Petopia] Đơn hàng hoàn tất #" + order.getOrderId();
+            String emailContent = buildCodSuccessEmail(order);
+            if (order.getUser().getEmail() != null) {
+                emailService.sendEmail(order.getUser().getEmail(), emailSubject, emailContent);
+            }
+        }
+    }
+
+    @Transactional
+    @Override
+    public void processSePayPayment(SePayWebhookDTO webhookData) {
+        // Lấy Mã đơn hàng từ nội dung chuyển khoản
+        // Cắt chuỗi để lấy XXX
+        String orderId = extractOrderId(webhookData.getTransferContent());
+
+        Payment payment = paymentRepository.findFirstByOrder_OrderIdOrderByCreatedAtDesc(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giao dịch cho đơn: " + orderId));
+
+        // Kiểm tra trạng thái hiện tại
+        if (payment.getPaymentStatus() == PaymentStatus.SUCCESS) {
+            return; // Đã xử lý rồi thì bỏ qua
         }
 
+        //  KIỂM TRA THỜI GIAN (Logic 10 phút)
+        LocalDateTime createdTime = payment.getCreatedAt();
+        LocalDateTime now = LocalDateTime.now();
+
+        // Nếu quá 10 phút -> Đánh dấu FAILED và không update đơn hàng
+        if (createdTime.plusMinutes(10).isBefore(now)) {
+            payment.setPaymentStatus(PaymentStatus.FAILED);
+            paymentRepository.save(payment);
+            throw new RuntimeException("Giao dịch quá hạn 10 phút. Vui lòng liên hệ Admin.");
+        }
+
+        //  Kiểm tra số tiền (Phải chuyển đủ hoặc dư)
+        if (webhookData.getTransferAmount() < payment.getAmount()) {
+            // Có thể xử lý logic chuyển thiếu tiền ở đây
+            throw new RuntimeException("Số tiền chuyển không đủ");
+        }
+
+        //UPDATE TRẠNG THÁI THÀNH CÔNG
+        // Update Payment
+        payment.setPaymentStatus(PaymentStatus.SUCCESS);
         paymentRepository.save(payment);
 
-        // Gửi mail
-        if (order.getUser().getEmail() != null) {
-            emailService.sendEmail(order.getUser().getEmail(), emailSubject, emailContent);
-        }
+        // Update Order -> DELIVERED & PAID
+        Order order = payment.getOrder();
+        order.setStatus(OrderStatus.DELIVERED);
+        order.setPaymentStatus(OrderPaymentStatus.PAID);
+        orderRepository.save(order);
+
+        //  Gửi mail xác nhận thanh toán thành công
+        emailService.sendEmail(
+                order.getUser().getEmail(),
+                "[Petopia] Thanh toán thành công đơn #" + orderId,
+                buildPaymentSuccessEmail(order)
+        );
+    }
+
+    private String buildPaymentSuccessEmail(Order order) {
+        return String.format("""
+            <div style="font-family: Arial, sans-serif;">
+                <h2 style="color: #27ae60;">Thanh toán thành công!</h2>
+                <p>Chúng tôi đã nhận được tiền cho đơn hàng <strong>%s</strong>.</p>
+                <p>Trạng thái đơn hàng: <strong>Đã giao (DELIVERED)</strong></p>
+                <p>Cảm ơn bạn!</p>
+            </div>
+            """, order.getOrderId());
+    }
+
+    private String extractOrderId(String content) {
+        return content.replace("THANHTOAN ", "").trim();
     }
 
     private String buildBankTransferEmail(Order order, String qrUrl, String content) {
@@ -194,20 +271,16 @@ public class OrderServiceImpl implements OrderService {
             """, order.getOrderId(), order.getTotalAmount(), qrUrl, content);
     }
 
-    private String buildCodEmail(Order order) {
+    private String buildCodSuccessEmail(Order order) {
         return String.format("""
             <div style="font-family: Arial, sans-serif;">
-                <h2 style="color: #27ae60;">Đặt hàng thành công!</h2>
-                <p>Xin chào <strong>%s</strong>,</p>
-                <p>Đơn hàng <strong>%s</strong> của bạn đã được ghi nhận.</p>
+                <h2 style="color: #27ae60;">Mua hàng thành công!</h2>
+                <p>Đơn hàng <strong>%s</strong> đã được thanh toán bằng tiền mặt.</p>
+                <p>Trạng thái: <strong>Đã giao hàng (DELIVERED)</strong></p>
                 <p>Tổng tiền: <strong>%,.0f VNĐ</strong></p>
-                <p>Hình thức: <strong>Thanh toán khi nhận hàng (COD)</strong></p>
-                <p>Chúng tôi sẽ sớm liên hệ để giao hàng đến địa chỉ: %s</p>
-                <br/>
-                <p>Cảm ơn bạn đã tin tưởng Petopia!</p>
+                <p>Cảm ơn bạn đã mua sắm tại Petopia!</p>
             </div>
-            """, order.getUser().getFullName(), order.getOrderId(), order.getTotalAmount(),
-                order.getAddress().getStreet() + ", " + order.getAddress().getProvince());
+            """, order.getOrderId(), order.getTotalAmount());
     }
 
     // Helper: Tạo Payment
