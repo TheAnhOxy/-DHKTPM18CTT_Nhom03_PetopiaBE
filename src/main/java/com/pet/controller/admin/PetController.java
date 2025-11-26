@@ -148,10 +148,14 @@ public class PetController {
 
         var result = petService.advanceSearch(request);
 
+        String message = result.getContent().isEmpty()
+                ? "Không tìm thấy thú cưng nào phù hợp"
+                : "Tìm kiếm thú cưng thành công";
+
         return ResponseEntity.ok(
                 ApiResponse.builder()
                         .status(HttpStatus.OK.value())
-                        .message("Tìm kiếm thú cưng thành công")
+                        .message(message)
                         .data(result)
                         .build()
         );

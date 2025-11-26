@@ -4,6 +4,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -111,4 +112,36 @@ public class EmailService {
 
     }
 
+    public void sendOtpEmail(String to, String otp) {
+        try {
+            log.info("Gửi OTP tới email: {}", to);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(to);
+            helper.setSubject("[Petopia] Mã OTP xác thực");
+
+            String content = String.format(
+                    "<div style='font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;'>" +
+                            "<h2 style='color: #2c3e50; text-align: center;'>Xin chào!</h2>" +
+                            "<p style='text-align: center; color: #555;'>Bạn vừa yêu cầu mã OTP để xác thực tài khoản tại <strong>Petopia</strong>.</p>" +
+                            "<div style='text-align: center; margin: 20px 0;'>" +
+                            "<span style='display: inline-block; background: #fff3e0; padding: 15px 25px; font-size: 24px; font-weight: bold; border: 2px solid #f39c12; border-radius: 8px; color: #e67e22;'>%s</span>" +
+                            "</div>" +
+                            "<p style='text-align: center; color: #555; font-size: 14px;'>Mã OTP có hiệu lực trong <strong>5 phút</strong>. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>" +
+                            "<p style='text-align: center; color: #888; font-size: 12px;'>Nếu bạn không yêu cầu OTP, vui lòng bỏ qua email này.<br/>Trân trọng,<br/>Đội ngũ Petopia</p>" +
+                            "</div>",
+                    otp
+            );
+
+            helper.setText(content, true);
+            mailSender.send(message);
+
+            log.info("Gửi OTP thành công tới {}", to);
+
+        } catch (MessagingException e) {
+            log.error("Gửi OTP thất bại: {}", e.getMessage());
+        }
+    }
 }
