@@ -91,7 +91,8 @@ public class OrderServiceImpl implements OrderService {
         }
         // -------------------------------------------
 
-        order.setShippingFee(30000.0);
+//        order.setShippingFee(30000.0);
+        order.setShippingFee(0.0);
 
         //  Xử lý Items & Tính tiền (Giữ nguyên logic cũ)
         double itemsTotal = 0;
@@ -114,9 +115,14 @@ public class OrderServiceImpl implements OrderService {
             oi.setOrder(order);
             oi.setPet(pet);
             oi.setQuantity(itemReq.getQuantity());
-            oi.setPriceAtPurchase(pet.getPrice());
+            
+            // Ưu tiên giá khuyến mãi nếu có, không thì lấy giá gốc
+            Double finalPrice = (pet.getDiscountPrice() != null && pet.getDiscountPrice() > 0) 
+                ? pet.getDiscountPrice() 
+                : pet.getPrice();
+            oi.setPriceAtPurchase(finalPrice);
 
-            itemsTotal += pet.getPrice() * itemReq.getQuantity();
+            itemsTotal += finalPrice * itemReq.getQuantity();
             orderItems.add(oi);
         }
         order.setOrderItems(orderItems);
