@@ -21,4 +21,14 @@ public interface VaccineRepository extends JpaRepository<Vaccin, String> {
 
     @Query("SELECT COUNT(DISTINCT v.pet.petId) FROM Vaccin v WHERE v.status = 'CHUA_TIEM'")
     long countPetsNeedVaccination();
+
+    // Đếm thú cưng đã tiêm (Distinct Pet)
+    @Query("SELECT COUNT(DISTINCT v.pet.petId) FROM Vaccin v WHERE v.status = 'Da_TIEM'")
+    long countVaccinatedPets();
+
+    // Đếm thú cưng sắp tiêm (Trong 7 ngày tới)
+    // Lưu ý: Logic này đếm LỊCH sắp tới
+    @Query("SELECT COUNT(v) FROM Vaccin v WHERE v.status = 'CHUA_TIEM' AND v.startDate BETWEEN CURRENT_TIMESTAMP AND :nextWeek")
+    long countUpcomingVaccines(java.time.LocalDateTime nextWeek);
+
 }

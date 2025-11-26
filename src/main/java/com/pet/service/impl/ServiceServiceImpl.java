@@ -16,6 +16,8 @@ import com.pet.repository.UserRepository;
 import com.pet.service.ServiceManagement;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
@@ -34,6 +36,7 @@ public class ServiceServiceImpl implements ServiceManagement {
 
 
     @Override
+    @Cacheable(value = "services_list", key = "#page + '-' + #size")
     public PageResponse<ServiceResponseDTO> getAllServices(int page, int size) {
         Page<com.pet.entity.Service> services = serviceRepository.findAll(PageRequest.of(page, size));
         return serviceConverter.toServicePageResponse(services);
@@ -48,6 +51,7 @@ public class ServiceServiceImpl implements ServiceManagement {
 
     @Override
     @Transactional
+    @CacheEvict(value = "services_list", allEntries = true)
     public ServiceResponseDTO createService(ServiceRequestDTO request) {
         com.pet.entity.Service service = new com.pet.entity.Service();
         service.setServiceId(generateServiceId());
@@ -57,6 +61,7 @@ public class ServiceServiceImpl implements ServiceManagement {
 
     @Override
     @Transactional
+    @CacheEvict(value = "services_list", allEntries = true)
     public ServiceResponseDTO updateService(String id, ServiceRequestDTO request) {
         com.pet.entity.Service service = serviceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Dịch vụ không tồn tại"));
@@ -67,6 +72,7 @@ public class ServiceServiceImpl implements ServiceManagement {
 
     @Override
     @Transactional
+    @CacheEvict(value = "services_list", allEntries = true)
     public void deleteService(String id) {
         if (!serviceRepository.existsById(id)) {
             throw new ResourceNotFoundException("Dịch vụ không tồn tại");

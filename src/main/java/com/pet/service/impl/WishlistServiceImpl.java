@@ -13,6 +13,8 @@ import com.pet.repository.UserRepository;
 import com.pet.repository.WishlistRepository;
 import com.pet.service.WishlistService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ public class WishlistServiceImpl implements WishlistService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "top_wishlist", allEntries = true)
     public String toggleWishlist(String userId, String petId) {
         // Check xem đã like chưa
         Optional<Wishlist> existingWishlist = wishlistRepository.findByUser_UserIdAndPet_PetId(userId, petId);
@@ -62,7 +65,10 @@ public class WishlistServiceImpl implements WishlistService {
     }
 
     @Override
+    // Lưu kết quả vào Redis với key là "top_wishlist::page-size"
+    @Cacheable(value = "top_wishlist", key = "#page + '-' + #size")
     public PageResponse<TopFavoritedPetDTO> getTopFavoritedPets(int page, int size) {
+        System.out.println("--- Query Database lấy Top Stats (Chưa có Cache hoặc Cache hết hạn) ---");
         Page<TopFavoritedPetDTO> pageResult = wishlistRepository.findTopFavoritedPets(PageRequest.of(page, size));
         PageResponse<TopFavoritedPetDTO> response = new PageResponse<>();
         response.setContent(pageResult.getContent());

@@ -104,7 +104,6 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Spring Security yêu cầu role có prefix "ROLE_"
         return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
     }
 
