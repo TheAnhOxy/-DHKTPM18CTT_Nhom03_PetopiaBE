@@ -41,7 +41,15 @@ public class PromotionConverter {
         } else {
             promotion.setCategory(null);
         }
-        promotion.setStatus(PromotionVoucherStatus.ACTIVE);
+        if (promotion.getPromotionId() == null) {
+            promotion.setStatus(PromotionVoucherStatus.ACTIVE);
+        } else {
+            if (requestDTO.getStatus() != null &&
+                    ("ACTIVE".equalsIgnoreCase(requestDTO.getStatus()) || "INACTIVE".equalsIgnoreCase(requestDTO.getStatus()))) {
+                promotion.setStatus(PromotionVoucherStatus.valueOf(requestDTO.getStatus().toUpperCase()));
+            }
+            // Nếu frontend không gửi status → giữ nguyên status cũ
+        }
         return promotion;
     }
 
