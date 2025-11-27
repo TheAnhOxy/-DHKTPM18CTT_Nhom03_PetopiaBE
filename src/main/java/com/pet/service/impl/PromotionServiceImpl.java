@@ -37,7 +37,7 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     public PageResponse<PromotionResponseDTO> getAllPromotions(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Promotion> promotionPage = promotionRepository.findAll(pageable);
+        Page<Promotion> promotionPage = promotionRepository.findAllByOrderByCreatedAtDesc(pageable);
 
         List<PromotionResponseDTO> promotionDTOs = promotionPage.getContent().stream()
                 .map(promotionConverter::mapToDTO)

@@ -15,6 +15,7 @@ import java.util.Optional;
 @Repository
 public interface PromotionRepository extends JpaRepository<Promotion, String> {
     Optional<Promotion> findByCode(String code);
+    Page<Promotion> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     @Query("""
     SELECT p FROM Promotion p 

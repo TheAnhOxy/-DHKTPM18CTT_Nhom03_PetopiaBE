@@ -3,6 +3,7 @@ package com.pet.converter;
 import com.pet.config.ModelMapperConfig;
 import com.pet.entity.Category;
 import com.pet.entity.Promotion;
+import com.pet.enums.PromotionVoucherStatus;
 import com.pet.exception.ResourceNotFoundException;
 import com.pet.modal.request.PromotionRequestDTO;
 import com.pet.modal.response.PromotionResponseDTO;
@@ -27,11 +28,11 @@ public class PromotionConverter {
     }
 
     public Promotion mapToEntity(PromotionRequestDTO requestDTO, Promotion promotion) {
-        promotion.setCategory(null); // Đặt category thành null trước khi ánh xạ để tránh ghi đè không mong muốn
+        promotion.setCategory(null);
         modelMapper.getModelMapper().map(requestDTO, promotion);
 
         if(promotion.getPromotionId() == null){
-            promotion.setPromotionId(generatePromotionId()); //Hoặc UUID.randomUUID().toString()
+            promotion.setPromotionId(generatePromotionId());
         }
         if(requestDTO.getCategoryId() != null){
             Category category = categoryRepository.findById(requestDTO.getCategoryId())
@@ -40,6 +41,7 @@ public class PromotionConverter {
         } else {
             promotion.setCategory(null);
         }
+        promotion.setStatus(PromotionVoucherStatus.ACTIVE);
         return promotion;
     }
 
