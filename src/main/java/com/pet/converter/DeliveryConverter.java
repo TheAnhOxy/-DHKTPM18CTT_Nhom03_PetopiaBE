@@ -65,9 +65,9 @@ public class DeliveryConverter {
 
     private String getVietnameseStatus(DeliveryStatus status) {
         return switch (status) {
-            case PREPARING -> "Đang chuẩn bị";
-            case SHIPPED -> "Đã lấy hàng";
-            case IN_TRANSIT -> "Đang vận chuyển";
+            case PREPARING -> "Chuẩn bị";
+            case SHIPPED -> "Đã đóng gói";
+            case IN_TRANSIT -> "Đang giao";
             case DELIVERED -> "Đã giao hàng";
             case RETURNED -> "Đã trả hàng";
             case FAILED -> "Giao hàng thất bại";
