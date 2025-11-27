@@ -1,5 +1,6 @@
 package com.pet.entity;
 
+import com.pet.converter.VaccineStatusConverter;
 import com.pet.enums.VaccineStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -41,7 +42,7 @@ public class Vaccin {
     @Column(name = "file", length = 255)
     private String file;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = VaccineStatusConverter.class)
     @Column(name = "status")
     private VaccineStatus status = VaccineStatus.CHUA_TIEM;
 

@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface PetService {
 
-    List<Pet> getPets();
+    List<PetResponseDTO> getPets();
 
     PetResponseDTO getPetById(String petId);
     PageResponse<PetForListResponseDTO> getPetsByCategory(String categoryId, int page, int size);

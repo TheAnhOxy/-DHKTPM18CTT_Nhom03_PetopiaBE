@@ -7,6 +7,7 @@ import com.pet.modal.response.VaccineResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,15 +18,29 @@ public class VaccineConverter {
 
     public VaccineResponseDTO toResponseDTO(Vaccin entity) {
         VaccineResponseDTO dto = modelMapper.getModelMapper().map(entity, VaccineResponseDTO.class);
+
+        // Map Pet info
         if (entity.getPet() != null) {
+            dto.setPetId(entity.getPet().getPetId());
             dto.setPetName(entity.getPet().getName());
             if (entity.getPet().getImages() != null && !entity.getPet().getImages().isEmpty()) {
                 dto.setPetImage(entity.getPet().getImages().iterator().next().getImageUrl());
             }
         }
+
+        // Map Owner (User) info - ĐÃ BỔ SUNG
         if (entity.getUser() != null) {
+            dto.setUserId(entity.getUser().getUserId());
             dto.setOwnerName(entity.getUser().getFullName());
+            dto.setOwnerPhone(entity.getUser().getPhoneNumber());
+            dto.setOwnerEmail(entity.getUser().getEmail());
         }
+
+        // Map Status Label (Tiện cho FE hiển thị)
+        if (entity.getStatus() != null) {
+            dto.setStatusLabel(entity.getStatus().getLabel());
+        }
+
         return dto;
     }
 
