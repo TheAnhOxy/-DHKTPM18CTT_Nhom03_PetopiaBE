@@ -17,7 +17,7 @@ public class DeliveryController {
     @GetMapping
     public ResponseEntity<PageResponse<DeliveryResponseDTO>> getAll(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "9") int size) {
         return ResponseEntity.ok(deliveryService.getAllDeliveries(page, size));
     }
 

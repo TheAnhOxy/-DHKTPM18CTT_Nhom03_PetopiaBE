@@ -25,7 +25,7 @@ public class DeliveryServiceImpl implements DeliveryService {
 
     @Override
     public PageResponse<DeliveryResponseDTO> getAllDeliveries(int page, int size) {
-        Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(0, 9, Sort.by("createdAt").descending());
         Page<Delivery> deliveryPage = deliveryRepository.findAll(pageable);
 
         List<DeliveryResponseDTO> content = deliveryPage.getContent().stream()
