@@ -12,8 +12,8 @@ public class VaccineBatchCreateRequestDTO {
     @NotEmpty(message = "Phải chọn ít nhất một thú cưng")
     private List<String> petIds;
 
-    @NotBlank(message = "User ID không được để trống")
-    private String userId;
+//    @NotBlank(message = "User ID không được để trống")
+//    private String userId;
 
     // THAY ĐỔI: Nhận Start & End thay vì List<Date>
     @NotNull(message = "Ngày bắt đầu không được để trống")
