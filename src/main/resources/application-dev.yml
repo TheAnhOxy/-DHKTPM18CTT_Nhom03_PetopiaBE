@@ -2,8 +2,8 @@ spring:
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/petshop
     username: root
-    password: root
-#    password: Theanh@123
+#    password: root
+    password: Theanh@123
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   data:
@@ -13,7 +13,7 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: duchaunguyen131@gmail.com
+    username: theanh199405023@gmail.com
     password: lbwcahcnaealcyzb
     properties:
       mail:
