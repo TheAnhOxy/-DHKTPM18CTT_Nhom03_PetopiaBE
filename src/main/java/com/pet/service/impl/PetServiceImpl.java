@@ -42,8 +42,11 @@ public class PetServiceImpl implements PetService {
     private PetConverter petConverter;
 
     @Override
-    public List<Pet> getPets() {
-        return petRepository.findAll();
+    public List<PetResponseDTO> getPets() {
+        List<Pet> pets = petRepository.findAll();
+        return pets.stream()
+                .map(pet -> petConverter.mapToDTO(pet))
+                .collect(Collectors.toList());
     }
 
     @Override

@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -43,8 +44,26 @@ public class PetConverter {
         return mapPet(pet, PetForListResponseDTO.class);
     }
 
+//    public PetResponseDTO mapToDTO(Pet pet) {
+//        return mapPet(pet, PetResponseDTO.class);
+//    }
+
     public PetResponseDTO mapToDTO(Pet pet) {
-        return mapPet(pet, PetResponseDTO.class);
+        PetResponseDTO dto = modelMapper.getModelMapper().map(pet, PetResponseDTO.class);
+        if (pet.getCategory() != null) {
+            dto.setCategoryId(pet.getCategory().getCategoryId());
+            dto.setCategoryName(pet.getCategory().getName());
+        }
+        if (pet.getImages() != null && !pet.getImages().isEmpty()) {
+            List<PetImageResponseDTO> imageDTOs = pet.getImages().stream()
+                    .map(img -> modelMapper.getModelMapper().map(img, PetImageResponseDTO.class))
+                    .collect(Collectors.toList());
+            dto.setImages(imageDTOs);
+        } else {
+            dto.setImages(new ArrayList<>());
+        }
+
+        return dto;
     }
 
     public PetForListResponseDTO mapToPetListDTO(Pet pet) {

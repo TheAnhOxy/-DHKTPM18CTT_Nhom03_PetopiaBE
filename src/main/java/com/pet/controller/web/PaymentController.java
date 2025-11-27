@@ -8,10 +8,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/payments")
+@RequestMapping("/api/payments")
 public class PaymentController {
 
-    @Autowired private OrderServiceImpl orderService; 
+    @Autowired private OrderServiceImpl orderService;
 
     // API này sẽ được SePay gọi tự động (Bạn cần config trên SePay)
     @PostMapping("/sepay-webhook")
