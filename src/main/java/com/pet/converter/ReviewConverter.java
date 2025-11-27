@@ -2,6 +2,7 @@ package com.pet.converter;
 
 import com.pet.config.ModelMapperConfig;
 import com.pet.entity.Review;
+import com.pet.entity.PetImage;
 import com.pet.modal.response.PageResponse;
 import com.pet.modal.response.ReviewResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,21 +19,42 @@ public class ReviewConverter {
     private ModelMapperConfig modelMapper;
 
     public ReviewResponseDTO toResponseDTO(Review review) {
+        // Map các trường cơ bản tự động (reviewId, rating, comment, reply...)
         ReviewResponseDTO dto = modelMapper.getModelMapper().map(review, ReviewResponseDTO.class);
-        dto.setReviewImageUrl(review.getImageUrl());
 
+        // --- 1. MAP THÔNG TIN PET & ẢNH PET ---
+        if (review.getPet() != null) {
+            dto.setPetId(review.getPet().getPetId());
+            dto.setPetName(review.getPet().getName());
+
+            // LOGIC LẤY ẢNH PET:
+            // Kiểm tra danh sách ảnh của Pet có tồn tại không
+            if (review.getPet().getImages() != null && !review.getPet().getImages().isEmpty()) {
+
+                // Cách 1: Tìm ảnh được đánh dấu là Thumbnail (isThumbnail = true)
+                String petImageUrl = review.getPet().getImages().stream()
+                        .filter(img -> Boolean.TRUE.equals(img.getIsThumbnail())) // Lọc ảnh thumbnail
+                        .map(PetImage::getImageUrl) // Lấy URL
+                        .findFirst() // Lấy cái đầu tiên tìm thấy
+                        .orElse(null);
+
+                // Cách 2: Nếu không có thumbnail set cứng, lấy bừa ảnh đầu tiên trong list
+                if (petImageUrl == null) {
+                    petImageUrl = review.getPet().getImages().iterator().next().getImageUrl();
+                }
+
+                // Gán vào DTO
+                dto.setPetImage(petImageUrl);
+            }
+        }
+
+        // --- 2. MAP THÔNG TIN USER (NGƯỜI ĐÁNH GIÁ) ---
         if (review.getUser() != null) {
             dto.setUserId(review.getUser().getUserId());
             dto.setUserFullName(review.getUser().getFullName());
             dto.setUserAvatar(review.getUser().getAvatar());
         }
-        if (review.getPet() != null) {
-            dto.setPetId(review.getPet().getPetId());
-            dto.setPetName(review.getPet().getName());
-            if (review.getPet().getImages() != null && !review.getPet().getImages().isEmpty()) {
-                dto.setPetImage(review.getPet().getImages().iterator().next().getImageUrl());
-            }
-        }
+
         return dto;
     }
 
