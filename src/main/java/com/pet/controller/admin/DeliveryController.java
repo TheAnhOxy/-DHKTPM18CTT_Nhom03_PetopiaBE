@@ -29,4 +29,13 @@ public class DeliveryController {
         }
         return ResponseEntity.ok(delivery);
     }
+
+    @PutMapping("/{deliveryId}/status")
+    public ResponseEntity<DeliveryResponseDTO> updateStatus(
+            @PathVariable String deliveryId,
+            @RequestParam String status) {
+
+        DeliveryResponseDTO updated = deliveryService.updateDeliveryStatus(deliveryId, status);
+        return ResponseEntity.ok(updated);
+    }
 }

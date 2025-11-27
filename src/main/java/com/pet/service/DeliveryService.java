@@ -7,4 +7,6 @@ public interface DeliveryService {
     PageResponse<DeliveryResponseDTO> getAllDeliveries(int page, int size);
 
     DeliveryResponseDTO getDeliveryById(String deliveryId);
+
+    DeliveryResponseDTO updateDeliveryStatus(String deliveryId, String status);
 }
