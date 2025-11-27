@@ -47,54 +47,59 @@ public class VaccineServiceImpl implements VaccineService {
     @Transactional
     @Override
     public List<VaccineResponseDTO> createVaccineBatch(VaccineBatchCreateRequestDTO request) {
-        // 1. Lấy User
+        // 1. Validate User
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + request.getUserId()));
 
-        // 2. Chuẩn bị dữ liệu sinh ID
+        // 2. Validate Ngày (Logic mới)
+        if (request.getEndDate().isBefore(request.getStartDate())) {
+            throw new IllegalArgumentException("Ngày kết thúc không được trước ngày bắt đầu");
+        }
+
         List<Vaccin> createdVaccines = new ArrayList<>();
         String lastId = vaccineRepository.findLastVaccineId().orElse("VC000");
         AtomicInteger counter = new AtomicInteger(Integer.parseInt(lastId.substring(2)));
+        List<String> petNames = new ArrayList<>();
 
-        List<String> petNames = new ArrayList<>(); // Để dùng cho email/noti
-
-        // 3. Loop tạo lịch
+        // 3. Loop qua từng Pet -> Tạo 1 bản ghi Vaccine với Range Ngày
         for (String petId : request.getPetIds()) {
             Pet pet = petRepository.findById(petId)
                     .orElseThrow(() -> new ResourceNotFoundException("Pet not found: " + petId));
             petNames.add(pet.getName());
 
-            for (LocalDateTime date : request.getScheduledDates()) {
-                Vaccin v = new Vaccin();
-                v.setVaccineId(String.format("VC%03d", counter.incrementAndGet()));
-                v.setUser(user);
-                v.setPet(pet);
-                modelMapper.map(request, v); // Map các trường chung
-                v.setStartDate(date);
-                v.setStatus(VaccineStatus.CHUA_TIEM);
-                createdVaccines.add(v);
-            }
+            Vaccin v = new Vaccin();
+            v.setVaccineId(String.format("VC%03d", counter.incrementAndGet()));
+            v.setUser(user);
+            v.setPet(pet);
+
+            // Map thông tin chung (Tên, Loại, Mô tả, Note)
+            modelMapper.map(request, v);
+
+            // Set Khoảng thời gian
+            v.setStartDate(request.getStartDate());
+            v.setEndDate(request.getEndDate());
+            v.setStatus(VaccineStatus.CHUA_TIEM); // Mặc định chưa tiêm
+
+            createdVaccines.add(v);
         }
 
-        // 4. Lưu Batch Vaccine
+        // 4. Lưu DB
         List<Vaccin> savedList = vaccineRepository.saveAll(createdVaccines);
 
-        // 5. TẠO NOTIFICATION (IN-APP)
-        createInAppNotification(user, request.getVaccineName(), petNames, request.getScheduledDates());
+        // 5. Format ngày hiển thị (VD: "27/11/2025 08:00 - 29/11/2025 17:00")
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        String dateRangeStr = request.getStartDate().format(fmt) + " - " + request.getEndDate().format(fmt);
 
-        // 6. GỬI EMAIL
-        sendEmailNotification(user, request.getVaccineName(), petNames, request.getScheduledDates());
+        // 6. Tạo Noti & Gửi Email (Logic mới)
+        createInAppNotification(user, request.getVaccineName(), petNames, dateRangeStr);
+        sendEmailNotification(user, request.getVaccineName(), petNames, dateRangeStr, request.getNote());
 
-        return savedList.stream()
-                .map(vaccineConverter::toResponseDTO)
-                .collect(Collectors.toList());
+        return savedList.stream().map(vaccineConverter::toResponseDTO).collect(Collectors.toList());
     }
 
-    // --- Helper: Tạo thông báo In-App ---
-    private void createInAppNotification(User user, String vaccineName, List<String> petNames, List<LocalDateTime> dates) {
+    // Helper: Noti In-App
+    private void createInAppNotification(User user, String vaccineName, List<String> petNames, String dateRangeStr) {
         Notification noti = new Notification();
-
-        // Sinh ID N001...
         String lastNotiId = notificationRepository.findLastNotificationId().orElse("N000");
         int nextId = Integer.parseInt(lastNotiId.substring(1)) + 1;
         noti.setNotificationId(String.format("N%03d", nextId));
@@ -104,31 +109,31 @@ public class VaccineServiceImpl implements VaccineService {
         noti.setTypeNote(NotificationType.VACCINATION_REMINDER);
         noti.setIsRead(false);
 
-        // Format nội dung
         String pets = String.join(", ", petNames);
-        String dateStr = dates.stream()
-                .map(d -> d.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
-                .collect(Collectors.joining(", "));
-
-        noti.setContent("Bạn có lịch tiêm " + vaccineName + " cho " + pets + " vào các ngày: " + dateStr);
+        noti.setContent("Lịch tiêm " + vaccineName + " cho " + pets + " vào thời gian: " + dateRangeStr);
 
         notificationRepository.save(noti);
     }
 
-    // --- Helper: Gửi Email ---
-    private void sendEmailNotification(User user, String vaccineName, List<String> petNames, List<LocalDateTime> dates) {
+    @Override
+    public List<VaccineResponseDTO> getVaccineHistoryByPet(String petId) {
+        return vaccineRepository.findByPetId(petId).stream()
+                .map(vaccineConverter::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    // Helper: Gửi Email (Gọi hàm mới đã sửa ở bước 1)
+    private void sendEmailNotification(User user, String vaccineName, List<String> petNames, String dateRangeStr, String note) {
         if (user.getEmail() != null && !user.getEmail().isEmpty()) {
             String petsStr = String.join(", ", petNames);
-            String datesStr = dates.stream()
-                    .map(d -> d.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")))
-                    .collect(Collectors.joining("<br/>"));
-
+            // Gọi đúng hàm có 6 tham số
             emailService.sendVaccineNotification(
                     user.getEmail(),
                     user.getFullName(),
                     vaccineName,
                     petsStr,
-                    datesStr
+                    dateRangeStr, // Truyền chuỗi range ngày đã format
+                    note
             );
         }
     }
