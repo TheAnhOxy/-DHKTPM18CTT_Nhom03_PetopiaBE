@@ -34,8 +34,8 @@ management:
         include: '*'
 
 sepay:
-  bank-code: MB
-  account-no: 123456789
+  bank-code: ICB
+  account-no: 109876820087
   template: compact
 logging:
   level:

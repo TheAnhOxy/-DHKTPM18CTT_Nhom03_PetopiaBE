@@ -3,6 +3,7 @@ package com.pet.controller.admin;
 import com.pet.modal.request.ApplyVoucherRequestDTO;
 import com.pet.modal.request.VoucherRequestDTO;
 import com.pet.modal.response.PageResponse;
+import com.pet.modal.response.PromotionResponseDTO;
 import com.pet.modal.response.VoucherResponseDTO;
 import com.pet.service.VoucherService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/vouchers")
+@RequestMapping("/admin/vouchers")
 public class VoucherController {
     @Autowired
     private VoucherService voucherService;
@@ -37,10 +38,10 @@ public class VoucherController {
     public ResponseEntity<VoucherResponseDTO> addOrUpdateVoucher(@RequestBody VoucherRequestDTO request){
         request.validate();
         VoucherResponseDTO voucher = voucherService.addOrUpdateVoucher(request);
-        if (voucher == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        if (request.getVoucherId() == null) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(voucher);
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(voucher);
+        return ResponseEntity.ok(voucher);
     }
 
     @PutMapping("/inactive/{voucherId}")

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import com.pet.entity.User;
 
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/api/orders")
 public class OrderController {
 
     @Autowired private OrderService orderService;
