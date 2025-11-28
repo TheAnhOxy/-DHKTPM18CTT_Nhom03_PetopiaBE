@@ -30,6 +30,7 @@ public class OrderResponseDTO {
     private String paymentUrl; // Link ảnh QR Code
     private String transactionId;
 
+    private Double discountAmount;
     // Items
     private List<OrderItemResponseDTO> orderItems;
 }

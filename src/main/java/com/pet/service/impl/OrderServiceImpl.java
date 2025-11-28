@@ -21,8 +21,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -38,104 +40,307 @@ public class OrderServiceImpl implements OrderService {
     @Autowired private EmailService emailService;
     @Autowired private OrderConverter orderConverter;
     @Autowired private OrderItemRepository orderItemRepository;
+    @Autowired private VoucherRepository voucherRepository;
+    @Autowired private PromotionRepository promotionRepository;
+    @Autowired private OrderPromotionRepository orderPromotionRepository;
+    @Autowired private OrderVoucherRepository orderVoucherRepository;
 
     //  Tạo Đơn Hàng ---
+//    @Override
+//    @Transactional
+//    public OrderResponseDTO createOrder(String userId, OrderCreateRequestDTO request) {
+//        //  Lấy User (Đã đăng nhập)
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+//
+//
+//        // --- CẬP NHẬT TÊN NGƯỜI NHẬN VÀO USER ---
+//        // Nếu form có gửi tên người nhận, ta cập nhật vào hồ sơ User luôn
+//        if (request.getRecipientName() != null && !request.getRecipientName().trim().isEmpty()) {
+//            user.setFullName(request.getRecipientName());
+//            // Lưu user lại để cập nhật fullName mới nhất
+//            userRepository.save(user);
+//        }
+//        //  XỬ LÝ ĐỊA CHỈ (Logic mới)
+//        Address shippingAddress;
+//        // Nếu User nhập địa chỉ mới (không truyền ID hoặc ID rỗng)
+//        if (request.getAddressId() == null || request.getAddressId().isEmpty()) {
+//            // Validate form
+//            if (request.getNewProvince() == null || request.getNewStreet() == null) {
+//                throw new IllegalArgumentException("Vui lòng nhập đầy đủ địa chỉ");
+//            }
+//            // Tạo và lưu địa chỉ mới cho User
+//            shippingAddress = createNewAddressForUser(user, request);
+//        } else {
+//            // Dùng địa chỉ cũ
+//            shippingAddress = addressRepository.findById(request.getAddressId())
+//                    .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
+//        }
+//
+//        //  Tạo Order
+//        Order order = new Order();
+//        order.setOrderId(generateOrderId());
+//        order.setUser(user);
+//        order.setAddress(shippingAddress);
+//        order.setPhoneNumber(request.getPhoneNumber());
+//        order.setNote(request.getNote());
+//
+//        // --- LOGIC TRẠNG THÁI THEO PAYMENT METHOD ---
+//        if (request.getPaymentMethod() == PaymentMethod.COD) {
+//            // COD: Mua luôn -> Hoàn thành luôn
+//            order.setStatus(OrderStatus.DELIVERED);
+//            order.setPaymentStatus(OrderPaymentStatus.PAID);
+//        } else {
+//            // BANK: Chờ chuyển khoản -> Confirmed nhưng chưa trả tiền
+//            order.setStatus(OrderStatus.CONFIRMED);
+//            order.setPaymentStatus(OrderPaymentStatus.UNPAID);
+//        }
+//        // -------------------------------------------
+//
+////        order.setShippingFee(30000.0);
+//        order.setShippingFee(0.0);
+//
+//        //  Xử lý Items & Tính tiền (Giữ nguyên logic cũ)
+//        double itemsTotal = 0;
+//        Set<OrderItem> orderItems = new HashSet<>();
+//        long currentTime = System.currentTimeMillis();
+//        int i = 0;
+//
+//
+//
+//        for (OrderItemRequestDTO itemReq : request.getItems()) {
+//            Pet pet = petRepository.findById(itemReq.getPetId())
+//                    .orElseThrow(() -> new ResourceNotFoundException("Pet not found"));
+//
+//            if (pet.getStockQuantity() < itemReq.getQuantity()) {
+//                throw new RuntimeException("Sản phẩm " + pet.getName() + " hết hàng");
+//            }
+//            pet.setStockQuantity(pet.getStockQuantity() - itemReq.getQuantity());
+//            petRepository.save(pet);
+//
+//            OrderItem oi = new OrderItem();
+//            oi.setOrderItemId(generateOrderItemId());
+//            oi.setOrder(order);
+//            oi.setPet(pet);
+//            oi.setQuantity(itemReq.getQuantity());
+//
+//            // Ưu tiên giá khuyến mãi nếu có, không thì lấy giá gốc
+//            Double finalPrice = (pet.getDiscountPrice() != null && pet.getDiscountPrice() > 0)
+//                ? pet.getDiscountPrice()
+//                : pet.getPrice();
+//            oi.setPriceAtPurchase(finalPrice);
+//
+//            itemsTotal += finalPrice * itemReq.getQuantity();
+//            orderItems.add(oi);
+//        }
+//        order.setOrderItems(orderItems);
+//        order.setTotalAmount(itemsTotal + order.getShippingFee());
+//
+//        Order savedOrder = orderRepository.save(order);
+//
+//        //  XỬ LÝ THANH TOÁN (Payment Logic)
+//        handlePaymentAndEmail(savedOrder, request.getPaymentMethod());
+//
+//        return orderConverter.toResponseDTO(savedOrder);
+//    }
     @Override
     @Transactional
     public OrderResponseDTO createOrder(String userId, OrderCreateRequestDTO request) {
-        //  Lấy User (Đã đăng nhập)
+        //  Lấy User
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-
-        // --- CẬP NHẬT TÊN NGƯỜI NHẬN VÀO USER ---
-        // Nếu form có gửi tên người nhận, ta cập nhật vào hồ sơ User luôn
         if (request.getRecipientName() != null && !request.getRecipientName().trim().isEmpty()) {
             user.setFullName(request.getRecipientName());
-            // Lưu user lại để cập nhật fullName mới nhất
             userRepository.save(user);
         }
-        //  XỬ LÝ ĐỊA CHỈ (Logic mới)
+
+        //  Xử lý địa chỉ
         Address shippingAddress;
-        // Nếu User nhập địa chỉ mới (không truyền ID hoặc ID rỗng)
         if (request.getAddressId() == null || request.getAddressId().isEmpty()) {
-            // Validate form
             if (request.getNewProvince() == null || request.getNewStreet() == null) {
                 throw new IllegalArgumentException("Vui lòng nhập đầy đủ địa chỉ");
             }
-            // Tạo và lưu địa chỉ mới cho User
             shippingAddress = createNewAddressForUser(user, request);
         } else {
-            // Dùng địa chỉ cũ
             shippingAddress = addressRepository.findById(request.getAddressId())
                     .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
         }
 
-        //  Tạo Order
+        //  Khởi tạo Order
         Order order = new Order();
         order.setOrderId(generateOrderId());
         order.setUser(user);
         order.setAddress(shippingAddress);
         order.setPhoneNumber(request.getPhoneNumber());
         order.setNote(request.getNote());
+        order.setCreatedAt(LocalDateTime.now());
 
-        // --- LOGIC TRẠNG THÁI THEO PAYMENT METHOD ---
+        // Set trạng thái ban đầu
         if (request.getPaymentMethod() == PaymentMethod.COD) {
-            // COD: Mua luôn -> Hoàn thành luôn
-            order.setStatus(OrderStatus.DELIVERED);
+            order.setStatus(OrderStatus.DELIVERED); // Logic : COD coi như xong luôn? (Thường là Pending -> Shipping)
             order.setPaymentStatus(OrderPaymentStatus.PAID);
         } else {
-            // BANK: Chờ chuyển khoản -> Confirmed nhưng chưa trả tiền
             order.setStatus(OrderStatus.CONFIRMED);
             order.setPaymentStatus(OrderPaymentStatus.UNPAID);
         }
-        // -------------------------------------------
 
-//        order.setShippingFee(30000.0);
-        order.setShippingFee(0.0);
-
-        //  Xử lý Items & Tính tiền (Giữ nguyên logic cũ)
+        //  Xử lý Order Items & Tính Tạm tính (Subtotal)
         double itemsTotal = 0;
         Set<OrderItem> orderItems = new HashSet<>();
-        long currentTime = System.currentTimeMillis();
-        int i = 0;
 
         for (OrderItemRequestDTO itemReq : request.getItems()) {
             Pet pet = petRepository.findById(itemReq.getPetId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Pet not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Pet not found: " + itemReq.getPetId()));
 
+            // Check tồn kho
             if (pet.getStockQuantity() < itemReq.getQuantity()) {
-                throw new RuntimeException("Sản phẩm " + pet.getName() + " hết hàng");
+                throw new RuntimeException("Sản phẩm " + pet.getName() + " không đủ số lượng");
             }
+            // Trừ kho
             pet.setStockQuantity(pet.getStockQuantity() - itemReq.getQuantity());
             petRepository.save(pet);
 
+            // Lấy giá (ưu tiên giá giảm của sản phẩm)
+            Double itemPrice = (pet.getDiscountPrice() != null && pet.getDiscountPrice() > 0)
+                    ? pet.getDiscountPrice()
+                    : pet.getPrice();
+
+            itemsTotal += itemPrice * itemReq.getQuantity();
+
+            // Tạo OrderItem
             OrderItem oi = new OrderItem();
             oi.setOrderItemId(generateOrderItemId());
             oi.setOrder(order);
             oi.setPet(pet);
             oi.setQuantity(itemReq.getQuantity());
-            
-            // Ưu tiên giá khuyến mãi nếu có, không thì lấy giá gốc
-            Double finalPrice = (pet.getDiscountPrice() != null && pet.getDiscountPrice() > 0) 
-                ? pet.getDiscountPrice() 
-                : pet.getPrice();
-            oi.setPriceAtPurchase(finalPrice);
-
-            itemsTotal += finalPrice * itemReq.getQuantity();
+            oi.setPriceAtPurchase(itemPrice);
+            oi.setDiscountApplied(0.0); // Mặc định 0, sẽ tính sau nếu có promo theo sp
             orderItems.add(oi);
         }
         order.setOrderItems(orderItems);
-        order.setTotalAmount(itemsTotal + order.getShippingFee());
 
+        //  Xử lý Voucher & Promotion (Tính tổng giảm giá)
+        double totalDiscount = 0;
+        Set<OrderVoucher> orderVouchers = new HashSet<>();
+        Set<OrderPromotion> orderPromotions = new HashSet<>();
+
+        // Voucher (Người dùng chọn)
+        if (request.getVoucherIds() != null && !request.getVoucherIds().isEmpty()) {
+            for (String vId : request.getVoucherIds()) {
+                Voucher voucher = voucherRepository.findById(vId).orElse(null);
+
+                // Validate Voucher
+                if (voucher != null && isValidVoucher(voucher, itemsTotal)) {
+                    double discountVal = calculateDiscount(voucher.getDiscountType(), voucher.getDiscountValue(), itemsTotal);
+                    totalDiscount += discountVal;
+
+                    // Tạo OrderVoucher
+                    OrderVoucher ov = new OrderVoucher();
+                    ov.setOrderVoucherId(generateOrderVoucherId());
+                    ov.setOrder(order);
+                    ov.setVoucher(voucher);
+                    ov.setDiscountApplied(discountVal);
+                    orderVouchers.add(ov);
+
+                    // Tăng số lượt dùng
+                    voucher.setUsedCount(voucher.getUsedCount() + 1);
+                    voucherRepository.save(voucher);
+                }
+            }
+            order.setOrderVouchers(orderVouchers);
+        }
+
+        //  Promotion (Tự động áp dụng)
+        List<Promotion> activePromos = promotionRepository.findActivePromotions(LocalDate.now());
+        for (Promotion promo : activePromos) {
+            // Logic check: Ví dụ promo cho đơn hàng > X tiền
+            if (promo.getMinOrderAmount() != null && itemsTotal >= promo.getMinOrderAmount()) {
+                double promoDiscount = 0;
+
+                if (promo.getPromotionType() == PromotionType.DISCOUNT) {
+                    // Giả sử Promotion cũng có discountValue (tiền mặt) hoặc %
+                    // Ở đây demo giảm thẳng tiền
+                    promoDiscount = promo.getDiscountValue();
+                }
+                // Logic khác: FREESHIP, BUNDLE... (tùy bạn implement thêm)
+
+                totalDiscount += promoDiscount;
+
+                OrderPromotion op = new OrderPromotion();
+                op.setOrderPromotionId(generateOrderPromotionId());
+                op.setOrder(order);
+                op.setPromotion(promo);
+                op.setDiscountApplied(promoDiscount);
+                orderPromotions.add(op);
+
+                // Tăng lượt dùng promo
+                promo.setUsedCount(promo.getUsedCount() + 1);
+                promotionRepository.save(promo);
+            }
+        }
+        order.setOrderPromotions(orderPromotions);
+
+
+        //  Tính Tổng Tiền Cuối Cùng
+        double shippingFee = 0.0;
+        order.setShippingFee(shippingFee);
+        order.setDiscountAmount(totalDiscount); // Tổng tiền được giảm
+
+        // Công thức: Hàng + Ship - Giảm giá (Không âm)
+        double finalAmount = (itemsTotal + shippingFee) - totalDiscount;
+        order.setTotalAmount(Math.max(0, finalAmount));
+
+        //  Lưu & Thanh toán
         Order savedOrder = orderRepository.save(order);
+         orderItemRepository.saveAll(orderItems);
 
-        //  XỬ LÝ THANH TOÁN (Payment Logic)
         handlePaymentAndEmail(savedOrder, request.getPaymentMethod());
 
         return orderConverter.toResponseDTO(savedOrder);
     }
 
+    // --- CÁC HÀM HELPER ---
+
+    private boolean isValidVoucher(Voucher v, double orderTotal) {
+        if (v.getStatus() != PromotionVoucherStatus.ACTIVE) return false;
+        if (v.getStartDate().isAfter(LocalDate.now()) || v.getEndDate().isBefore(LocalDate.now())) return false;
+        if (v.getMinOrderAmount() != null && orderTotal < v.getMinOrderAmount()) return false;
+        if (v.getMaxUsage() != null && v.getUsedCount() >= v.getMaxUsage()) return false;
+        return true;
+    }
+
+    private double calculateDiscount(VoucherDiscountType type, Double value, double orderTotal) {
+        if (type == VoucherDiscountType.PERCENTAGE) {
+            // Ví dụ: Giảm 10% của 1.000.000 = 100.000
+            return orderTotal * (value / 100.0);
+        } else {
+            // Giảm tiền mặt: 50.000
+            return value;
+        }
+    }
+
+    private String generateOrderPromotionId() {
+        String lastId = orderPromotionRepository.findLastId().orElse("OP000");
+        try {
+            int num = Integer.parseInt(lastId.substring(2));
+            return String.format("OP%03d", num + 1);
+        } catch (Exception e) {
+            // Fallback nếu lỗi
+            return "OP" + System.currentTimeMillis();
+        }
+    }
+
+    private String generateOrderVoucherId() {
+        String lastId = orderVoucherRepository.findLastId().orElse("OV000");
+        try {
+            int num = Integer.parseInt(lastId.substring(2));
+            return String.format("OV%03d", num + 1);
+        } catch (Exception e) {
+            // Fallback nếu lỗi
+            return "OV" + System.currentTimeMillis();
+        }
+    }
     // --- Helper: Tạo địa chỉ mới ---
     private Address createNewAddressForUser(User user, OrderCreateRequestDTO req) {
         Address address = new Address();
