@@ -12,8 +12,12 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @Slf4j
@@ -62,18 +66,30 @@ public class PetController {
         );
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse> createOrUpdatePet(
-            @Valid @RequestBody PetRequestDTO petRequestDTO
+            @RequestPart("pet") String petJson,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images
     ) {
-        PetResponseDTO pet = petService.addOrUpdatePet(petRequestDTO);
+        try {
+            var result = petService.addOrUpdatePetWithImages(petJson, images);
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.builder()
-                        .status(HttpStatus.CREATED.value())
-                        .message("Tạo/Cập nhật thú cưng thành công")
-                        .data(pet)
-                        .build());
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                    ApiResponse.builder()
+                            .status(HttpStatus.CREATED.value())
+                            .message("Lưu thú cưng thành công")
+                            .data(result)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Lỗi tạo pet: ", e);
+            return ResponseEntity.badRequest().body(
+                    ApiResponse.builder()
+                            .status(400)
+                            .message("Lỗi: " + e.getMessage())
+                            .build()
+            );
+        }
     }
 
     @DeleteMapping("/{id}")

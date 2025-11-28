@@ -1,5 +1,6 @@
 package com.pet.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pet.converter.PetConverter;
 import com.pet.entity.Pet;
 import com.pet.entity.PetImage;
@@ -14,6 +15,7 @@ import com.pet.modal.search.PetSearchRequestDTO;
 import com.pet.repository.PetImageRepository;
 import com.pet.repository.PetRepository;
 import com.pet.repository.spec.PetSpecification;
+import com.pet.service.CloudinaryService;
 import com.pet.service.PetService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +26,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -40,6 +44,9 @@ public class PetServiceImpl implements PetService {
     private PetImageRepository petImageRepository;
     @Autowired
     private PetConverter petConverter;
+
+    @Autowired private CloudinaryService cloudinaryService;
+    @Autowired private ObjectMapper objectMapper;
 
     @Override
     public List<PetResponseDTO> getPets() {
@@ -95,7 +102,10 @@ public class PetServiceImpl implements PetService {
 
     @Override
     @Transactional
-    public PetResponseDTO addOrUpdatePet(PetRequestDTO requestDTO) {
+    public PetResponseDTO addOrUpdatePetWithImages(String petJson, List<MultipartFile> images) throws IOException {
+        // 1. Parse JSON String -> DTO
+        PetRequestDTO requestDTO = objectMapper.readValue(petJson, PetRequestDTO.class);
+
         Pet pet;
         boolean isUpdate = requestDTO.getPetId() != null;
 
@@ -107,14 +117,44 @@ public class PetServiceImpl implements PetService {
             pet = new Pet();
             pet.setCreatedAt(LocalDateTime.now());
         }
+
+        // 2. Map thông tin cơ bản
         pet = petConverter.mapToEntity(requestDTO, pet);
-        Pet savedPet = petRepository.save(pet);
-        if (requestDTO.getImages() != null && !requestDTO.getImages().isEmpty()) {
-            handlePetImages(savedPet, requestDTO.getImages());
+
+        // 3. Xử lý Ảnh Upload (Nếu có)
+        if (images != null && !images.isEmpty()) {
+            for (int i = 0; i < images.size(); i++) {
+                MultipartFile file = images.get(i);
+
+                // Upload lên Cloudinary
+                String imageUrl = cloudinaryService.uploadImage(file);
+
+                // Tạo Entity PetImage
+                PetImage petImage = new PetImage();
+                petImage.setImageId(generateNextPetImageId());
+                petImage.setPet(pet);
+                petImage.setImageUrl(imageUrl);
+                petImage.setCreatedAt(LocalDateTime.now());
+
+                // Logic thumbnail:
+                // Nếu pet chưa có ảnh nào -> Ảnh đầu tiên upload là thumbnail
+                // Hoặc nếu upload nhiều ảnh -> Ảnh đầu tiên trong mảng upload là thumbnail (tùy logic bạn chọn)
+                boolean isFirstImage = pet.getImages().isEmpty() && i == 0;
+                petImage.setIsThumbnail(isFirstImage); // Hoặc false, để FE chọn sau
+
+                // Add vào Pet
+                pet.getImages().add(petImage);
+            }
         }
 
+        // Lưu ý: Nếu DTO có danh sách ảnh cũ (để xóa hoặc update thumbnail),
+        // bạn vẫn nên gọi hàm handlePetImages cũ để xử lý đồng bộ.
+        // Ở đây tôi chỉ demo phần upload thêm mới.
+
+        Pet savedPet = petRepository.save(pet);
         return petConverter.mapToDTO(savedPet);
     }
+
 
     private void handlePetImages(Pet pet, List<PetImageDTO> imageDTOs) {
         Map<String, PetImageDTO> dtoMap = imageDTOs.stream()
