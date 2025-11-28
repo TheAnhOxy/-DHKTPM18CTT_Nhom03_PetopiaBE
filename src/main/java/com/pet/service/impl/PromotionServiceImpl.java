@@ -2,8 +2,10 @@ package com.pet.service.impl;
 
 import com.pet.converter.PromotionConverter;
 import com.pet.entity.Promotion;
+import com.pet.enums.PromotionType;
 import com.pet.enums.PromotionVoucherStatus;
 import com.pet.modal.request.PromotionRequestDTO;
+import com.pet.modal.request.PromotionSearchRequestDTO;
 import com.pet.modal.response.PageResponse;
 import com.pet.modal.response.PromotionResponseDTO;
 import com.pet.repository.PromotionRepository;
@@ -12,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,8 +37,8 @@ public class PromotionServiceImpl implements PromotionService {
 
     @Override
     public PageResponse<PromotionResponseDTO> getAllPromotions(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Promotion> promotionPage = promotionRepository.findAll(pageable);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Promotion> promotionPage = promotionRepository.findAllByOrderByCreatedAtDesc(pageable);
 
         List<PromotionResponseDTO> promotionDTOs = promotionPage.getContent().stream()
                 .map(promotionConverter::mapToDTO)
@@ -75,5 +78,48 @@ public class PromotionServiceImpl implements PromotionService {
         promotion.setStatus(PromotionVoucherStatus.INACTIVE);
         Promotion updatedPromotion = promotionRepository.save(promotion);
         return promotionConverter.mapToDTO(updatedPromotion);
+    }
+
+    @Override
+    public PageResponse<PromotionResponseDTO> searchPromotions(PromotionSearchRequestDTO req) {
+        int page = req.getPage() != null ? req.getPage() : 0;
+        int size = req.getSize() != null && req.getSize() > 0 ? req.getSize() : 9;
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        String kw = req.getKeyword() != null && !req.getKeyword().isBlank()
+                ? "%" + req.getKeyword().trim().toLowerCase() + "%" : null;
+
+        String cat = req.getCategoryId() != null && !"all".equalsIgnoreCase(req.getCategoryId())
+                ? req.getCategoryId() : null;
+
+        PromotionVoucherStatus statusEnum = null;
+        if (req.getStatus() != null && !"all".equalsIgnoreCase(req.getStatus())) {
+            statusEnum = "active".equalsIgnoreCase(req.getStatus()) ? PromotionVoucherStatus.ACTIVE
+                    : PromotionVoucherStatus.INACTIVE;
+        }
+
+        PromotionType typeEnum = null;
+        if (req.getType() != null && !"all".equalsIgnoreCase(req.getType())) {
+            typeEnum = switch (req.getType().toUpperCase()) {
+                case "DISCOUNT"  -> PromotionType.DISCOUNT;
+                case "FREESHIP"  -> PromotionType.FREESHIP;
+                case "CASHBACK"  -> PromotionType.CASHBACK;
+                case "BUNDLE"    -> PromotionType.BUNDLE;
+                default          -> null;
+            };
+        }
+
+        Page<Promotion> result = promotionRepository.searchPromotions(kw, cat, statusEnum, typeEnum, pageable);
+
+        List<PromotionResponseDTO> content = result.getContent().stream()
+                .map(promotionConverter::mapToDTO)
+                .toList();
+
+        PageResponse<PromotionResponseDTO> response = new PageResponse<>();
+        response.setContent(content);
+        response.setTotalElements(result.getTotalElements());
+        response.setPage(page);
+        response.setSize(size);
+        return response;
     }
 }

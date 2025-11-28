@@ -1,6 +1,7 @@
 package com.pet.controller.admin;
 
 import com.pet.modal.request.PromotionRequestDTO;
+import com.pet.modal.request.PromotionSearchRequestDTO;
 import com.pet.modal.response.PageResponse;
 import com.pet.modal.response.PromotionResponseDTO;
 import com.pet.service.PromotionService;
@@ -27,7 +28,7 @@ public class PromotionController {
     @GetMapping("/list")
     public ResponseEntity<PageResponse<PromotionResponseDTO>> getAllPromotions(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "9") int size
     ){
         return ResponseEntity.ok(promotionService.getAllPromotions(page, size));
     }
@@ -51,4 +52,11 @@ public class PromotionController {
         return ResponseEntity.ok(promotion);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<PageResponse<PromotionResponseDTO>> searchPromotions(@ModelAttribute PromotionSearchRequestDTO request) {
+        if (request == null) {
+            request = new PromotionSearchRequestDTO();
+        }
+        return ResponseEntity.ok(promotionService.searchPromotions(request));
+    }
 }

@@ -19,6 +19,7 @@ public class PromotionRequestDTO {
     private Integer maxUsage;
     private String categoryId;
     private String imageUrl;
+    private String status;
 
     public void validate() {
         if(startDate != null && endDate != null && startDate.isAfter(endDate)) {
@@ -35,6 +36,11 @@ public class PromotionRequestDTO {
         }
         if (categoryId != null && categoryId.isEmpty()) {
             throw new IllegalArgumentException("CategoryId cannot be empty if provided");
+        }
+        if (this.promotionId != null && this.status != null) {
+            if (!"ACTIVE".equalsIgnoreCase(status) && !"INACTIVE".equalsIgnoreCase(status)) {
+                throw new IllegalArgumentException("Status must be ACTIVE or INACTIVE");
+            }
         }
     }
 }

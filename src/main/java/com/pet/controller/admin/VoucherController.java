@@ -2,6 +2,7 @@ package com.pet.controller.admin;
 
 import com.pet.modal.request.ApplyVoucherRequestDTO;
 import com.pet.modal.request.VoucherRequestDTO;
+import com.pet.modal.request.VoucherSearchRequestDTO;
 import com.pet.modal.response.PageResponse;
 import com.pet.modal.response.PromotionResponseDTO;
 import com.pet.modal.response.VoucherResponseDTO;
@@ -61,6 +62,16 @@ public class VoucherController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
         return ResponseEntity.ok(voucher);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<PageResponse<VoucherResponseDTO>> searchVouchers(
+            @ModelAttribute VoucherSearchRequestDTO request) {
+
+        if (request == null) {
+            request = new VoucherSearchRequestDTO();
+        }
+        return ResponseEntity.ok(voucherService.searchVouchers(request));
     }
 
 }

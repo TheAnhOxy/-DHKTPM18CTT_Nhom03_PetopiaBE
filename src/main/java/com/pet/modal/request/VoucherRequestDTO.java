@@ -16,6 +16,8 @@ public class VoucherRequestDTO {
     private LocalDate startDate;
     private LocalDate endDate;
     private Integer maxUsage;
+    private String imageUrl;
+    private String status;
 
     public void validate(){
         if(startDate != null && endDate != null && startDate.isAfter(endDate)){
@@ -29,6 +31,11 @@ public class VoucherRequestDTO {
         }
         if(maxUsage != null && maxUsage < 0){
             throw new IllegalArgumentException("maxUsage cannot be negative");
+        }
+        if (this.voucherId != null && this.status != null) {
+            if (!"ACTIVE".equalsIgnoreCase(status) && !"INACTIVE".equalsIgnoreCase(status)) {
+                throw new IllegalArgumentException("Status must be ACTIVE or INACTIVE");
+            }
         }
     }
 }

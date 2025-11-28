@@ -23,4 +23,5 @@ public class PromotionResponseDTO {
     private Integer usedCount;
     private String categoryId;
     private String imageUrl;
+    private String status;
 }
