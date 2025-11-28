@@ -27,6 +27,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -370,7 +372,7 @@ public class OrderServiceImpl implements OrderService {
         if (method == PaymentMethod.BANK_TRANSFER) {
             // BANK: Trạng thái PENDING, Tạo QR
             payment.setPaymentStatus(PaymentStatus.PENDING);
-            String content = "THANHTOAN " + order.getOrderId();
+            String content = "SEVQR " + order.getOrderId();
             String qrUrl = sePayService.generateQrUrl(order.getTotalAmount(), content);
             payment.setPaymentUrl(qrUrl);
             payment.setTransactionId(content);
@@ -403,8 +405,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void processSePayPayment(SePayWebhookDTO webhookData) {
         // Lấy Mã đơn hàng từ nội dung chuyển khoản
-        // Cắt chuỗi để lấy XXX
-        String orderId = extractOrderId(webhookData.getTransferContent());
+        String orderId = extractOrderId(webhookData.resolveTransferContent());
 
         Payment payment = paymentRepository.findFirstByOrder_OrderIdOrderByCreatedAtDesc(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy giao dịch cho đơn: " + orderId));
@@ -462,7 +463,25 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private String extractOrderId(String content) {
-        return content.replace("THANHTOAN ", "").trim();
+        if (content == null || content.isBlank()) {
+            throw new RuntimeException("Nội dung giao dịch trống");
+        }
+
+        String normalized = content.trim().toUpperCase();
+        if (normalized.startsWith("SEVQR")) {
+            String[] parts = normalized.split("\\s+");
+            if (parts.length >= 2) {
+                return parts[1];
+            }
+        }
+
+        Pattern pattern = Pattern.compile("O\\d{3,}");
+        Matcher matcher = pattern.matcher(normalized);
+        if (matcher.find()) {
+            return matcher.group();
+        }
+
+        throw new RuntimeException("Không xác định được mã đơn từ nội dung: " + content);
     }
 
     private String buildBankTransferEmail(Order order, String qrUrl, String content) {
@@ -506,8 +525,8 @@ public class OrderServiceImpl implements OrderService {
 
         // Nếu là Chuyển khoản -> Tạo QR SePay
         if (method == PaymentMethod.BANK_TRANSFER) {
-            // Nội dung CK: "THANHTOAN [Mã Đơn]"
-            String content = "THANHTOAN " + order.getOrderId();
+            // Nội dung CK: "SEVQR [Mã Đơn]"
+            String content = "SEVQR " + order.getOrderId();
             String qrUrl = sePayService.generateQrUrl(order.getTotalAmount(), content);
 
             payment.setPaymentUrl(qrUrl); // Lưu link QR vào DB
