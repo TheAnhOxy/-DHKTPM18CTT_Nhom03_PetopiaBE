@@ -32,7 +32,7 @@ public class DeliveryServiceImpl implements DeliveryService {
 
     @Override
     public PageResponse<DeliveryResponseDTO> getAllDeliveries(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
         Page<Delivery> deliveryPage = deliveryRepository.findAll(pageable);
 
         List<DeliveryResponseDTO> content = deliveryPage.getContent().stream()
@@ -84,7 +84,7 @@ public class DeliveryServiceImpl implements DeliveryService {
 
     @Override
     public PageResponse<DeliveryResponseDTO> searchDeliveries(String query, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
 
         Page<Delivery> deliveryPage;
         if (query == null || query.trim().isEmpty()) {

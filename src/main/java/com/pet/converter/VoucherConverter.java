@@ -33,9 +33,8 @@ public class VoucherConverter {
 
         if(voucher.getVoucherId() == null){
             voucher.setVoucherId(generateVoucherId());
-        }
-        if (voucher.getVoucherId() == null) {
             voucher.setStatus(PromotionVoucherStatus.ACTIVE);
+            voucher.setUsedCount(0);
         } else {
             if (requestDTO.getStatus() != null &&
                     ("ACTIVE".equalsIgnoreCase(requestDTO.getStatus()) || "INACTIVE".equalsIgnoreCase(requestDTO.getStatus()))) {

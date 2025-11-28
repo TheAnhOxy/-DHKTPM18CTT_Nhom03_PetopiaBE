@@ -38,7 +38,7 @@ public class VoucherServiceImpl implements VoucherService {
 
     @Override
     public PageResponse<VoucherResponseDTO> getAllVouchers(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Voucher> voucherPage = voucherRepository.findAll(pageable);
 
         List<VoucherResponseDTO> voucherDTOs = voucherPage.getContent().stream()
