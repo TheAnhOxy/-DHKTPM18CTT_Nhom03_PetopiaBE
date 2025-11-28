@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -83,7 +84,7 @@ public class PromotionServiceImpl implements PromotionService {
     public PageResponse<PromotionResponseDTO> searchPromotions(PromotionSearchRequestDTO req) {
         int page = req.getPage() != null ? req.getPage() : 0;
         int size = req.getSize() != null && req.getSize() > 0 ? req.getSize() : 9;
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
         String kw = req.getKeyword() != null && !req.getKeyword().isBlank()
                 ? "%" + req.getKeyword().trim().toLowerCase() + "%" : null;
