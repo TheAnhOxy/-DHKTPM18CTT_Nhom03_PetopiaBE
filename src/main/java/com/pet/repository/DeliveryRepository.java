@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DeliveryRepository extends JpaRepository<Delivery, String> {
@@ -24,4 +25,6 @@ public interface DeliveryRepository extends JpaRepository<Delivery, String> {
             "OR LOWER(u.fullName) LIKE LOWER(:term)" +
             "AND (:status IS NULL OR d.deliveryStatus = :status)")
     Page<Delivery> searchDeliveries(@Param("term") String term, @Param("status") DeliveryStatus status, Pageable pageable);
+
+    Optional<Delivery> findByOrder_OrderId(String orderId);
 }
