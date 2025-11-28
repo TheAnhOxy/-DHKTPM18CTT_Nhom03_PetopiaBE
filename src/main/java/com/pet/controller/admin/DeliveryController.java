@@ -38,4 +38,14 @@ public class DeliveryController {
         DeliveryResponseDTO updated = deliveryService.updateDeliveryStatus(deliveryId, status);
         return ResponseEntity.ok(updated);
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<PageResponse<DeliveryResponseDTO>> search(
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "9") int size) {
+
+        PageResponse<DeliveryResponseDTO> result = deliveryService.searchDeliveries(query, page, size);
+        return ResponseEntity.ok(result);
+    }
 }

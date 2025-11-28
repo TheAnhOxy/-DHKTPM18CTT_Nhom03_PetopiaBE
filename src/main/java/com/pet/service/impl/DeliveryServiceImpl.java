@@ -82,6 +82,30 @@ public class DeliveryServiceImpl implements DeliveryService {
         return deliveryConverter.toResponseDTO(delivery);
     }
 
+    @Override
+    public PageResponse<DeliveryResponseDTO> searchDeliveries(String query, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<Delivery> deliveryPage;
+        if (query == null || query.trim().isEmpty()) {
+            deliveryPage = deliveryRepository.findAll(pageable);
+        } else {
+            String searchTerm = "%" + query.trim().toLowerCase() + "%";
+            deliveryPage = deliveryRepository.searchDeliveries(searchTerm, pageable);
+        }
+
+        List<DeliveryResponseDTO> content = deliveryPage.getContent().stream()
+                .map(deliveryConverter::toResponseDTO)
+                .toList();
+
+        PageResponse<DeliveryResponseDTO> response = new PageResponse<>();
+        response.setContent(content);
+        response.setTotalElements(deliveryPage.getTotalElements());
+        response.setPage(page);
+        response.setSize(size);
+        return response;
+    }
+
     private String generateHistoryId() {
         return "DH%03d".formatted(deliveryHistoryRepository.count() + 1);
     }
