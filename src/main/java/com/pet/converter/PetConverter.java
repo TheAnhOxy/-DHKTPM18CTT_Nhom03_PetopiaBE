@@ -54,6 +54,17 @@ public class PetConverter {
             dto.setCategoryId(pet.getCategory().getCategoryId());
             dto.setCategoryName(pet.getCategory().getName());
         }
+
+        // Lấy ảnh thumbnail chính
+        if (pet.getImages() != null && !pet.getImages().isEmpty()) {
+            Optional<PetImage> mainImageOpt = pet.getImages().stream()
+                    .filter(img -> Boolean.TRUE.equals(img.getIsThumbnail()))
+                    .findFirst();
+            String mainImageUrl = mainImageOpt.map(PetImage::getImageUrl)
+                    .orElse(pet.getImages().iterator().next().getImageUrl());
+            dto.setMainImageUrl(mainImageUrl);
+        }
+
         if (pet.getImages() != null && !pet.getImages().isEmpty()) {
             List<PetImageResponseDTO> imageDTOs = pet.getImages().stream()
                     .map(img -> modelMapper.getModelMapper().map(img, PetImageResponseDTO.class))
@@ -62,6 +73,10 @@ public class PetConverter {
         } else {
             dto.setImages(new ArrayList<>());
         }
+
+        // Tính rating trung bình và số lượng đánh giá
+        dto.setRating(calculateAverageRating(pet));
+        dto.setReviewCount(pet.getReviews() != null ? pet.getReviews().size() : 0);
 
         return dto;
     }
