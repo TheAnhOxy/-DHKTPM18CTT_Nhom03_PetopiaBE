@@ -59,11 +59,12 @@ public class BookingController {
 
     @GetMapping("/services")
     public ResponseEntity<ApiResponse> getPublicServices(
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(ApiResponse.builder()
                 .status(200)
-                .data(serviceManagement.getAllServices(page, size))
+                .data(serviceManagement.getAllServices(keyword,page, size))
                 .build());
     }
 }
