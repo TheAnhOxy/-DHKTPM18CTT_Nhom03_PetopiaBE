@@ -66,23 +66,48 @@ public class PetController {
         );
     }
 
+//    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<ApiResponse> createOrUpdatePet(
+//            @Valid @ModelAttribute PetRequestDTO request // Chỉ cần cái này là đủ
+//    ) {
+//        try {
+//            // Gọi Service (Truyền DTO vào, trong DTO đã có files)
+//            PetResponseDTO pet = petService.addOrUpdatePetWithImages(request);
+//
+//            return ResponseEntity.status(HttpStatus.CREATED)
+//                    .body(ApiResponse.builder()
+//                            .status(HttpStatus.CREATED.value())
+//                            .message("Tạo/Cập nhật thú cưng thành công")
+//                            .data(pet)
+//                            .build());
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body(ApiResponse.builder()
+//                    .status(400)
+//                    .message("Lỗi: " + e.getMessage())
+//                    .build());
+//        }
+//    }
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse> createOrUpdatePet(
-            @RequestPart("pet") String petJson,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images
+            @RequestPart("pet") String petJson, // 1. Nhận chuỗi JSON
+            @RequestPart(value = "files", required = false) List<MultipartFile> files // 2. Nhận file
     ) {
         try {
-            var result = petService.addOrUpdatePetWithImages(petJson, images);
+            log.info("Đang tạo Pet với JSON: {}", petJson);
+
+            // Gọi Service đã sửa
+            PetResponseDTO pet = petService.addOrUpdatePetWithImages(petJson, files);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(
                     ApiResponse.builder()
                             .status(HttpStatus.CREATED.value())
-                            .message("Lưu thú cưng thành công")
-                            .data(result)
+                            .message("Tạo/Cập nhật thú cưng thành công")
+                            .data(pet)
                             .build()
             );
         } catch (Exception e) {
-            log.error("Lỗi tạo pet: ", e);
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(
                     ApiResponse.builder()
                             .status(400)

@@ -18,4 +18,8 @@ public interface PetRepository extends JpaRepository<Pet, String>, JpaSpecificat
     // Đếm số lượng pet có status AVAILABLE (Khỏe mạnh/Sẵn sàng bán)
     @Query("SELECT COUNT(p) FROM Pet p WHERE p.status = 'AVAILABLE'")
     long countHealthyPets();
+
+    // Query lấy ID thú cưng lớn nhất (Ví dụ: P005)
+    @Query("SELECT p.petId FROM Pet p ORDER BY p.petId DESC LIMIT 1")
+    Optional<String> findMaxPetId();
 }
