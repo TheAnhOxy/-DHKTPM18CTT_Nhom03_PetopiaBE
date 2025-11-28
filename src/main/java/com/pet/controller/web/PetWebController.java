@@ -4,6 +4,7 @@ import com.pet.modal.request.ApplyVoucherRequestDTO;
 import com.pet.modal.response.*;
 import com.pet.modal.search.PetSearchRequestDTO;
 import com.pet.service.CategoryService;
+import com.pet.service.DeliveryService;
 import com.pet.service.PetService;
 import com.pet.service.PromotionService;
 import com.pet.service.ReviewService;
@@ -30,6 +31,8 @@ public class PetWebController {
     private VoucherService voucherService;
     @Autowired
     private PromotionService promotionService;
+    @Autowired
+    private DeliveryService deliveryService;
 
     @GetMapping()
     public ResponseEntity<PageResponse<PetForListResponseDTO>> getAllPetsWithStatusActive(
@@ -127,6 +130,24 @@ public class PetWebController {
             return ResponseEntity.noContent().build(); // 204
         }
         return ResponseEntity.ok(promotion);
+    }
+
+    @GetMapping("/orders/{orderId}/delivery")
+    public ResponseEntity<DeliveryResponseDTO> getDeliveryByOrder(@PathVariable String orderId) {
+        DeliveryResponseDTO delivery = deliveryService.getDeliveryByOrderId(orderId);
+        if (delivery == null) {
+            return ResponseEntity.noContent().build(); // 204
+        }
+        return ResponseEntity.ok(delivery);
+    }
+
+    @GetMapping("/deliveries/{deliveryId}")
+    public ResponseEntity<DeliveryResponseDTO> getDeliveryById(@PathVariable String deliveryId) {
+        DeliveryResponseDTO delivery = deliveryService.getDeliveryById(deliveryId);
+        if (delivery == null) {
+            return ResponseEntity.noContent().build(); // 204
+        }
+        return ResponseEntity.ok(delivery);
     }
 
 }

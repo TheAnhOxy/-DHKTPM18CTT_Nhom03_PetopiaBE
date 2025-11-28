@@ -46,6 +46,8 @@ public class OrderServiceImpl implements OrderService {
     @Autowired private PromotionRepository promotionRepository;
     @Autowired private OrderPromotionRepository orderPromotionRepository;
     @Autowired private OrderVoucherRepository orderVoucherRepository;
+    @Autowired private DeliveryRepository deliveryRepository;
+    @Autowired private DeliveryHistoryRepository deliveryHistoryRepository;
 
     //  Tạo Đơn Hàng ---
 //    @Override
@@ -295,7 +297,10 @@ public class OrderServiceImpl implements OrderService {
 
         //  Lưu & Thanh toán
         Order savedOrder = orderRepository.save(order);
-         orderItemRepository.saveAll(orderItems);
+        orderItemRepository.saveAll(orderItems);
+
+        // Tạo Delivery ban đầu cho đơn
+        createInitialDeliveryForOrder(savedOrder);
 
         handlePaymentAndEmail(savedOrder, request.getPaymentMethod());
 
@@ -642,6 +647,61 @@ public class OrderServiceImpl implements OrderService {
             return String.format("A%03d", num + 1);
         } catch (Exception e) {
             return "AD" + System.currentTimeMillis();
+        }
+    }
+
+    // --- Delivery helpers ---
+    private void createInitialDeliveryForOrder(Order order) {
+        // Nếu đã có delivery rồi thì không tạo lại
+        if (order.getDelivery() != null) {
+            return;
+        }
+
+        Delivery delivery = new Delivery();
+        delivery.setDeliveryId(generateDeliveryId());
+        delivery.setOrder(order);
+        delivery.setShippingMethod(ShippingMethod.STANDARD);
+        delivery.setShippingFee(order.getShippingFee() != null ? order.getShippingFee() : 0.0);
+        delivery.setDeliveryStatus(DeliveryStatus.PREPARING);
+
+        Delivery savedDelivery = deliveryRepository.save(delivery);
+
+        DeliveryHistory history = new DeliveryHistory();
+        history.setHistoryId(generateDeliveryHistoryId());
+        history.setDelivery(savedDelivery);
+        history.setStatus(DeliveryStatus.PREPARING);
+        history.setDescription("Đơn hàng đang được chuẩn bị tại kho");
+        history.setLocation(null);
+        deliveryHistoryRepository.save(history);
+    }
+
+    private String generateDeliveryId() {
+        String lastId = deliveryRepository
+                .findAll(PageRequest.of(0, 1, Sort.by("deliveryId").descending()))
+                .stream()
+                .findFirst()
+                .map(Delivery::getDeliveryId)
+                .orElse("D000");
+        try {
+            int num = Integer.parseInt(lastId.substring(1));
+            return String.format("D%03d", num + 1);
+        } catch (Exception e) {
+            return "D" + System.currentTimeMillis();
+        }
+    }
+
+    private String generateDeliveryHistoryId() {
+        String lastId = deliveryHistoryRepository
+                .findAll(PageRequest.of(0, 1, Sort.by("historyId").descending()))
+                .stream()
+                .findFirst()
+                .map(DeliveryHistory::getHistoryId)
+                .orElse("DH000");
+        try {
+            int num = Integer.parseInt(lastId.substring(2));
+            return String.format("DH%03d", num + 1);
+        } catch (Exception e) {
+            return "DH" + System.currentTimeMillis();
         }
     }
 
