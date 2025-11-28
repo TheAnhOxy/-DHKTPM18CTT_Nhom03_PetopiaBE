@@ -34,6 +34,7 @@ public class OrderConverter {
         dto.setNote(order.getNote());
         dto.setCreatedAt(order.getCreatedAt());
 
+        dto.setDiscountAmount(order.getDiscountAmount());
         // Map Address thành chuỗi
         if (order.getAddress() != null) {
             Address addr = order.getAddress();

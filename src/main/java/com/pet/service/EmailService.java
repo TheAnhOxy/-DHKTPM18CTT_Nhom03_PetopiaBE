@@ -18,7 +18,8 @@ public class EmailService {
     private JavaMailSender mailSender ;
 
     @Async
-    public void sendVaccineNotification(String toEmail, String userName, String vaccineName, String petNames, String dates) {
+    public void sendVaccineNotification(String toEmail, String userName, String vaccineName,
+                                        String petNames, String dateRange, String note) {
         try {
             log.info("Đang bắt đầu gửi email tới: {}", toEmail);
             MimeMessage message = mailSender.createMimeMessage();
@@ -35,18 +36,19 @@ public class EmailService {
                         <p><strong>Loại vắc xin:</strong> %s</p>
                         <p><strong>Thú cưng:</strong> %s</p>
                         <p><strong>Thời gian dự kiến:</strong> %s</p>
+                        <p><strong>Ghi chú:</strong> %s</p>
                     </div>
                     <br/>
                     <p style="color: #7f8c8d;">Trân trọng,<br/>Đội ngũ Petopia</p>
                 </div>
-                """, userName, vaccineName, petNames, dates);
+                """, userName, vaccineName, petNames, dateRange, (note != null ? note : "Không có"));
 
             helper.setText(content, true);
             mailSender.send(message);
             log.info("Gửi email thành công!");
 
         } catch (Exception e) {
-            log.error("Gửi email thất bại (Nhưng vẫn tiếp tục xử lý): {}", e.getMessage());
+            log.error("Gửi email thất bại: {}", e.getMessage());
         }
     }
 

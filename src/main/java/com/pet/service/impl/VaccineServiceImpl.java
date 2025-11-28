@@ -13,10 +13,7 @@ import com.pet.modal.request.VaccineUpdateRequestDTO;
 import com.pet.modal.response.PageResponse;
 import com.pet.modal.response.VaccineResponseDTO;
 import com.pet.modal.response.VaccineStatsDTO;
-import com.pet.repository.NotificationRepository;
-import com.pet.repository.PetRepository;
-import com.pet.repository.UserRepository;
-import com.pet.repository.VaccineRepository;
+import com.pet.repository.*;
 import com.pet.service.EmailService;
 import com.pet.service.VaccineService;
 import org.modelmapper.ModelMapper;
@@ -28,7 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -43,58 +42,91 @@ public class VaccineServiceImpl implements VaccineService {
     @Autowired private EmailService emailService;
     @Autowired private VaccineConverter vaccineConverter;
     @Autowired private ModelMapper modelMapper;
+    @Autowired private OrderRepository orderRepository;
 
     @Transactional
     @Override
     public List<VaccineResponseDTO> createVaccineBatch(VaccineBatchCreateRequestDTO request) {
-        // 1. Lấy User
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + request.getUserId()));
+        // Validate ngày tháng
+        if (request.getEndDate().isBefore(request.getStartDate())) {
+            throw new IllegalArgumentException("Ngày kết thúc không được trước ngày bắt đầu");
+        }
 
-        // 2. Chuẩn bị dữ liệu sinh ID
         List<Vaccin> createdVaccines = new ArrayList<>();
         String lastId = vaccineRepository.findLastVaccineId().orElse("VC000");
         AtomicInteger counter = new AtomicInteger(Integer.parseInt(lastId.substring(2)));
 
-        List<String> petNames = new ArrayList<>(); // Để dùng cho email/noti
+        // Map dùng để gom nhóm gửi email: <Chủ sở hữu, List<Tên Thú Cưng>>
+        Map<User, List<String>> mailMap = new HashMap<>();
 
-        // 3. Loop tạo lịch
+        // 1. Duyệt qua từng Pet ID từ FE gửi lên
         for (String petId : request.getPetIds()) {
             Pet pet = petRepository.findById(petId)
                     .orElseThrow(() -> new ResourceNotFoundException("Pet not found: " + petId));
-            petNames.add(pet.getName());
 
-            for (LocalDateTime date : request.getScheduledDates()) {
-                Vaccin v = new Vaccin();
-                v.setVaccineId(String.format("VC%03d", counter.incrementAndGet()));
-                v.setUser(user);
-                v.setPet(pet);
-                modelMapper.map(request, v); // Map các trường chung
-                v.setStartDate(date);
-                v.setStatus(VaccineStatus.CHUA_TIEM);
-                createdVaccines.add(v);
+            // --- TỰ ĐỘNG TÌM CHỦ ---
+            User owner = findOwnerOfPet(pet);
+
+            if (owner == null) {
+                // Log cảnh báo nếu pet không có chủ, nhưng vẫn tạo lịch (lịch nội bộ shop)
+                System.out.println("Cảnh báo: Pet " + pet.getName() + " chưa có chủ sở hữu trong hệ thống đơn hàng.");
+                // Tùy logic: Có thể continue (bỏ qua) hoặc tạo vaccine với user = null (nếu DB cho phép)
+                // Ở đây giả sử bắt buộc phải có chủ, nếu không có thì bỏ qua con này
+                continue;
             }
+
+            // Tạo Vaccine
+            Vaccin v = new Vaccin();
+            v.setVaccineId(String.format("VC%03d", counter.incrementAndGet()));
+            v.setPet(pet);
+            v.setUser(owner); // Gán đúng chủ vừa tìm được
+
+            modelMapper.map(request, v); // Map các thông tin chung (Tên vaccin, ngày...)
+            v.setStartDate(request.getStartDate());
+            v.setEndDate(request.getEndDate());
+            v.setStatus(VaccineStatus.CHUA_TIEM);
+
+            createdVaccines.add(v);
+
+            // Gom vào Map để tí nữa gửi mail
+            // Nếu owner đã có trong Map thì add thêm tên pet, chưa có thì tạo list mới
+            mailMap.computeIfAbsent(owner, k -> new ArrayList<>()).add(pet.getName());
         }
 
-        // 4. Lưu Batch Vaccine
+        // 2. Lưu tất cả lịch tiêm
         List<Vaccin> savedList = vaccineRepository.saveAll(createdVaccines);
 
-        // 5. TẠO NOTIFICATION (IN-APP)
-        createInAppNotification(user, request.getVaccineName(), petNames, request.getScheduledDates());
+        // 3. Gửi Email & Notification (Duyệt theo danh sách chủ)
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        String dateRangeStr = request.getStartDate().format(fmt) + " - " + request.getEndDate().format(fmt);
 
-        // 6. GỬI EMAIL
-        sendEmailNotification(user, request.getVaccineName(), petNames, request.getScheduledDates());
+        for (Map.Entry<User, List<String>> entry : mailMap.entrySet()) {
+            User owner = entry.getKey();
+            List<String> petNames = entry.getValue(); // Danh sách tên pet của chủ này
 
-        return savedList.stream()
-                .map(vaccineConverter::toResponseDTO)
-                .collect(Collectors.toList());
+            // Gửi Noti
+            createInAppNotification(owner, request.getVaccineName(), petNames, dateRangeStr);
+
+            // Gửi Email
+            sendEmailNotification(owner, request.getVaccineName(), petNames, dateRangeStr, request.getNote());
+        }
+
+        return savedList.stream().map(vaccineConverter::toResponseDTO).collect(Collectors.toList());
     }
 
-    // --- Helper: Tạo thông báo In-App ---
-    private void createInAppNotification(User user, String vaccineName, List<String> petNames, List<LocalDateTime> dates) {
-        Notification noti = new Notification();
+    // Hàm tìm chủ (Vẫn dùng logic cũ hoặc logic mới getOwner() nếu đã sửa Entity Pet)
+    private User findOwnerOfPet(Pet pet) {
+        // Ưu tiên 1: Lấy trực tiếp nếu Entity Pet đã có owner
+        // return pet.getOwner();
 
-        // Sinh ID N001...
+        // Ưu tiên 2: Tìm qua đơn hàng (Logic cũ của bạn)
+        List<User> owners = orderRepository.findOwnersByPetId(pet.getPetId());
+        return owners.isEmpty() ? null : owners.get(0);
+    }
+
+    // Helper: Noti In-App
+    private void createInAppNotification(User user, String vaccineName, List<String> petNames, String dateRangeStr) {
+        Notification noti = new Notification();
         String lastNotiId = notificationRepository.findLastNotificationId().orElse("N000");
         int nextId = Integer.parseInt(lastNotiId.substring(1)) + 1;
         noti.setNotificationId(String.format("N%03d", nextId));
@@ -104,31 +136,31 @@ public class VaccineServiceImpl implements VaccineService {
         noti.setTypeNote(NotificationType.VACCINATION_REMINDER);
         noti.setIsRead(false);
 
-        // Format nội dung
         String pets = String.join(", ", petNames);
-        String dateStr = dates.stream()
-                .map(d -> d.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
-                .collect(Collectors.joining(", "));
-
-        noti.setContent("Bạn có lịch tiêm " + vaccineName + " cho " + pets + " vào các ngày: " + dateStr);
+        noti.setContent("Lịch tiêm " + vaccineName + " cho " + pets + " vào thời gian: " + dateRangeStr);
 
         notificationRepository.save(noti);
     }
 
-    // --- Helper: Gửi Email ---
-    private void sendEmailNotification(User user, String vaccineName, List<String> petNames, List<LocalDateTime> dates) {
+    @Override
+    public List<VaccineResponseDTO> getVaccineHistoryByPet(String petId) {
+        return vaccineRepository.findByPetId(petId).stream()
+                .map(vaccineConverter::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    // Helper: Gửi Email (Gọi hàm mới đã sửa ở bước 1)
+    private void sendEmailNotification(User user, String vaccineName, List<String> petNames, String dateRangeStr, String note) {
         if (user.getEmail() != null && !user.getEmail().isEmpty()) {
             String petsStr = String.join(", ", petNames);
-            String datesStr = dates.stream()
-                    .map(d -> d.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")))
-                    .collect(Collectors.joining("<br/>"));
-
+            // Gọi đúng hàm có 6 tham số
             emailService.sendVaccineNotification(
                     user.getEmail(),
                     user.getFullName(),
                     vaccineName,
                     petsStr,
-                    datesStr
+                    dateRangeStr, // Truyền chuỗi range ngày đã format
+                    note
             );
         }
     }

@@ -26,4 +26,5 @@ public interface VaccineService {
     PageResponse<VaccineResponseDTO> getAllVaccines(int page, int size);
 
     VaccineStatsDTO getVaccineStats();
+    List<VaccineResponseDTO> getVaccineHistoryByPet(String petId);
 }

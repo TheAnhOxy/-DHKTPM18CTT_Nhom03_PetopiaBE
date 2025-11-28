@@ -12,7 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 
 public class UserWebController {
 
@@ -35,4 +35,10 @@ public class UserWebController {
                 .data(userService.updateUserProfile(currentUser.getUserId(), request)).build());
     }
 
+    @GetMapping("/addresses")
+    public ResponseEntity<ApiResponse> getMyAddresses(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status(200)
+                .data(userService.getMyAddresses(currentUser.getUserId())).build());
+    }
 }

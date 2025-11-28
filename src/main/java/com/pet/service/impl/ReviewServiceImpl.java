@@ -9,6 +9,7 @@ import com.pet.modal.request.ReviewReplyRequestDTO;
 import com.pet.modal.request.ReviewRequestDTO;
 import com.pet.modal.response.PageResponse;
 import com.pet.modal.response.ReviewResponseDTO;
+import com.pet.modal.response.ReviewStatsDTO;
 import com.pet.repository.PetRepository;
 import com.pet.repository.ReviewRepository;
 import com.pet.repository.UserRepository;
@@ -21,6 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class ReviewServiceImpl implements ReviewService {
@@ -59,11 +63,26 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional
     public ReviewResponseDTO replyToReview(String reviewId, ReviewReplyRequestDTO replyRequest) {
         Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đánh giá với ID: " + reviewId));
+                .orElseThrow(() -> new ResourceNotFoundException("Review not found: " + reviewId));
 
-        // Logic cập nhật trả lời
+        // Luôn ghi đè nội dung mới và thời gian mới
         review.setReply(replyRequest.getReplyContent());
         review.setReplyDate(LocalDateTime.now());
+
+        Review savedReview = reviewRepository.save(review);
+        return reviewConverter.toResponseDTO(savedReview);
+    }
+
+    // --- HÀM MỚI: XÓA REPLY ---
+    @Override
+    @Transactional
+    public ReviewResponseDTO deleteReply(String reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review not found: " + reviewId));
+
+        // Chỉ set các trường của Admin về null
+        review.setReply(null);
+        review.setReplyDate(null);
 
         Review savedReview = reviewRepository.save(review);
         return reviewConverter.toResponseDTO(savedReview);
@@ -111,5 +130,43 @@ public class ReviewServiceImpl implements ReviewService {
         } catch (NumberFormatException e) {
             return "R" + System.currentTimeMillis();
         }
+    }
+
+    @Override
+    public PageResponse<ReviewResponseDTO> getReviews(String petId, Integer rating, Boolean isReplied, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Review> reviewPage = reviewRepository.findAllWithFilter(petId, rating, isReplied, pageable);
+        return reviewConverter.toPageResponse(reviewPage);
+    }
+
+    @Override
+    public ReviewStatsDTO getReviewStats() {
+        long total = reviewRepository.count();
+
+        // Gọi hàm ngắn gọn đã sửa
+        long unreplied = reviewRepository.countUnreplied();
+        long replied = reviewRepository.countReplied(); // <-- Sửa dòng này
+
+        Double avg = reviewRepository.getAverageRating();
+
+        Map<Integer, Long> starMap = new HashMap<>();
+        List<Object[]> stars = reviewRepository.countByStars();
+        for (Object[] row : stars) {
+            // Rating có thể null nên cần check an toàn
+            if (row[0] != null) {
+                starMap.put((Integer) row[0], (Long) row[1]);
+            }
+        }
+        for (int i = 1; i <= 5; i++) {
+            starMap.putIfAbsent(i, 0L);
+        }
+
+        return ReviewStatsDTO.builder()
+                .totalReviews(total)
+                .averageRating(avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0)
+                .repliedCount(replied)
+                .unrepliedCount(unreplied)
+                .starCounts(starMap)
+                .build();
     }
 }

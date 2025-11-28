@@ -59,4 +59,14 @@ public class AdminVaccineController {
         vaccineService.deleteVaccine(id);
         return ResponseEntity.ok(ApiResponse.builder().status(200).message("Đã xóa lịch tiêm").build());
     }
+
+    // API Mới: Xem lịch sử tiêm của 1 thú cưng
+    @GetMapping("/pet/{petId}")
+    public ResponseEntity<ApiResponse> getHistoryByPet(@PathVariable String petId) {
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status(200)
+                .message("Lấy lịch sử tiêm thành công")
+                .data(vaccineService.getVaccineHistoryByPet(petId)) // Trả về List
+                .build());
+    }
 }
