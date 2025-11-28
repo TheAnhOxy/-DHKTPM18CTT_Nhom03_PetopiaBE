@@ -104,14 +104,10 @@ public class PetServiceImpl implements PetService {
     @Override
     @Transactional
     public PetResponseDTO addOrUpdatePetWithImages(String petJson, List<MultipartFile> files) throws IOException {
-
-        // 1. CONVERT JSON STRING -> DTO OBJECT
         PetRequestDTO requestDTO = objectMapper.readValue(petJson, PetRequestDTO.class);
 
         Pet pet;
         boolean isUpdate = requestDTO.getPetId() != null && !requestDTO.getPetId().isEmpty();
-
-        // 2. Tìm hoặc Init Pet
         if (isUpdate) {
             pet = petRepository.findById(requestDTO.getPetId())
                     .orElseThrow(() -> new ResourceNotFoundException("Pet not found"));
@@ -122,19 +118,15 @@ public class PetServiceImpl implements PetService {
             pet.setCreatedAt(LocalDateTime.now());
             pet.setImages(new HashSet<>());
         }
-
-        // 3. Map dữ liệu
         petConverter.mapToEntity(requestDTO, pet);
 
-        // 4. Xử lý ảnh CŨ (Nếu có gửi danh sách ảnh cũ cần giữ lại)
+        //  Xử lý ảnh CŨ (Nếu có gửi danh sách ảnh cũ cần giữ lại)
         if (isUpdate && requestDTO.getOldImages() != null) {
             handlePetImages(pet, requestDTO.getOldImages());
         }
 
-        // 5. Xử lý ảnh MỚI (Dùng logic AtomicInteger để không trùng ID)
+        //  Xử lý ảnh MỚI (Dùng logic AtomicInteger để không trùng ID)
         if (files != null && !files.isEmpty()) {
-
-            // Lấy Max ID từ DB 1 lần duy nhất
             String lastImageId = petImageRepository.findMaxImageId();
             int imageCounter = 1;
             if (lastImageId != null && lastImageId.startsWith("PI")) {
