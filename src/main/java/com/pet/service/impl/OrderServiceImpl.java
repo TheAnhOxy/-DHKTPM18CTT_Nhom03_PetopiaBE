@@ -49,6 +49,9 @@ public class OrderServiceImpl implements OrderService {
     @Autowired private DeliveryRepository deliveryRepository;
     @Autowired private DeliveryHistoryRepository deliveryHistoryRepository;
 
+    // Sequence dùng để sinh orderItemId an toàn trong 1 request
+    private final AtomicInteger orderItemSequence = new AtomicInteger(0);
+
     //  Tạo Đơn Hàng ---
 //    @Override
 //    @Transactional
@@ -255,34 +258,9 @@ public class OrderServiceImpl implements OrderService {
             order.setOrderVouchers(orderVouchers);
         }
 
-        //  Promotion (Tự động áp dụng)
-        List<Promotion> activePromos = promotionRepository.findActivePromotions(LocalDate.now());
-        for (Promotion promo : activePromos) {
-            // Logic check: Ví dụ promo cho đơn hàng > X tiền
-            if (promo.getMinOrderAmount() != null && itemsTotal >= promo.getMinOrderAmount()) {
-                double promoDiscount = 0;
-
-                if (promo.getPromotionType() == PromotionType.DISCOUNT) {
-                    // Giả sử Promotion cũng có discountValue (tiền mặt) hoặc %
-                    // Ở đây demo giảm thẳng tiền
-                    promoDiscount = promo.getDiscountValue();
-                }
-                // Logic khác: FREESHIP, BUNDLE... (tùy bạn implement thêm)
-
-                totalDiscount += promoDiscount;
-
-                OrderPromotion op = new OrderPromotion();
-                op.setOrderPromotionId(generateOrderPromotionId());
-                op.setOrder(order);
-                op.setPromotion(promo);
-                op.setDiscountApplied(promoDiscount);
-                orderPromotions.add(op);
-
-                // Tăng lượt dùng promo
-                promo.setUsedCount(promo.getUsedCount() + 1);
-                promotionRepository.save(promo);
-            }
-        }
+        //  Promotion (Tự động áp dụng) - TẠM THỜI TẮT, CHỈ ÁP DỤNG VOUCHER THEO YÊU CẦU
+        //  Nếu sau này muốn bật lại auto promotion, có thể bật đoạn code cũ hoặc
+        //  bọc logic dưới vào một điều kiện cấu hình.
         order.setOrderPromotions(orderPromotions);
 
 
@@ -630,13 +608,19 @@ public class OrderServiceImpl implements OrderService {
         }
     }
     private String generateOrderItemId() {
-        String lastId = orderItemRepository.findLastOrderItemId().orElse("OI000");
-        try {
-            int num = Integer.parseInt(lastId.substring(2));
-            return String.format("OI%03d", num + 1);
-        } catch (Exception e) {
-            return "OI001";
+        // Lấy lastId một lần duy nhất, sau đó dùng sequence trong bộ nhớ
+        if (orderItemSequence.get() == 0) {
+            String lastId = orderItemRepository.findLastOrderItemId().orElse("OI000");
+            try {
+                int current = Integer.parseInt(lastId.substring(2));
+                orderItemSequence.set(current);
+            } catch (Exception e) {
+                orderItemSequence.set(0);
+            }
         }
+
+        int next = orderItemSequence.incrementAndGet();
+        return String.format("OI%03d", next);
     }
 
     private String generateAddressId() {

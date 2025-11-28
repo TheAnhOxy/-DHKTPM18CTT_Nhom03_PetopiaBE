@@ -55,6 +55,9 @@ public class ReviewConverter {
             dto.setUserAvatar(review.getUser().getAvatar());
         }
 
+        // --- 3. MAP ẢNH REVIEW (image_url) ---
+        dto.setReviewImageUrl(review.getImageUrl());
+
         return dto;
     }
 
