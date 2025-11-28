@@ -1,6 +1,7 @@
 package com.pet.repository;
 
 import com.pet.entity.Order;
+import com.pet.entity.User;
 import com.pet.enums.OrderStatus;
 import com.pet.modal.response.TopSellingPetDTO;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,8 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     @Query("SELECT o.orderId FROM Order o ORDER BY o.orderId DESC LIMIT 1")
     Optional<String> findLastOrderId();
 
+    @Query("SELECT o.user FROM Order o JOIN o.orderItems oi WHERE oi.pet.petId = :petId AND o.status = 'DELIVERED' ORDER BY o.createdAt DESC")
+    List<User> findOwnersByPetId(String petId);
     Page<Order> findByUser_UserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
 
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.status = 'DELIVERED'")

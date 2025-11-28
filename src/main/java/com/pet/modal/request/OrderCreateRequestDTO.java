@@ -34,4 +34,7 @@ public class OrderCreateRequestDTO {
 
     @NotNull(message = "Phương thức thanh toán là bắt buộc")
     private PaymentMethod paymentMethod; // COD hoặc BANK_TRANSFER
+
+    //BỔ SUNG: Danh sách ID Voucher người dùng chọn
+    private List<String> voucherIds;
 }
