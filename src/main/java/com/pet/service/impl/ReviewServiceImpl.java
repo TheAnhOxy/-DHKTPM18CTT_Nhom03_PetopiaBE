@@ -1,5 +1,6 @@
 package com.pet.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pet.converter.ReviewConverter;
 import com.pet.entity.Pet;
 import com.pet.entity.Review;
@@ -13,6 +14,7 @@ import com.pet.modal.response.ReviewStatsDTO;
 import com.pet.repository.PetRepository;
 import com.pet.repository.ReviewRepository;
 import com.pet.repository.UserRepository;
+import com.pet.service.CloudinaryService;
 import com.pet.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,7 +22,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +41,10 @@ public class ReviewServiceImpl implements ReviewService {
     private UserRepository userRepository;
     @Autowired
     private ReviewConverter reviewConverter;
+    @Autowired
+    private CloudinaryService cloudinaryService;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Override
     public PageResponse<ReviewResponseDTO> getAllReviews(int page, int size) {
@@ -105,6 +113,42 @@ public class ReviewServiceImpl implements ReviewService {
         review.setRating(request.getRating());
         review.setComment(request.getComment());
         review.setImageUrl(request.getImageUrl());
+        Review savedReview = reviewRepository.save(review);
+        return reviewConverter.toResponseDTO(savedReview);
+    }
+
+    // Tạo review với upload ảnh lên Cloudinary
+    @Transactional
+    public ReviewResponseDTO createReviewWithImage(ReviewRequestDTO request, MultipartFile image) throws IOException {
+        // 1. Upload ảnh nếu có
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = cloudinaryService.uploadImage(image);
+            request.setImageUrl(imageUrl);
+        }
+
+        // 2. Validate dữ liệu
+        if (request.getPetId() == null || request.getPetId().isEmpty()) {
+            throw new IllegalArgumentException("Pet ID không được để trống");
+        }
+        if (request.getUserId() == null || request.getUserId().isEmpty()) {
+            throw new IllegalArgumentException("User ID không được để trống");
+        }
+
+        // 3. Tạo review
+        Pet pet = petRepository.findById(request.getPetId())
+                .orElseThrow(() -> new ResourceNotFoundException("Pet not found"));
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Review review = new Review();
+        review.setReviewId(generateReviewId());
+        review.setPet(pet);
+        review.setUser(user);
+        review.setRating(request.getRating());
+        review.setComment(request.getComment());
+        review.setImageUrl(request.getImageUrl());
+        
         Review savedReview = reviewRepository.save(review);
         return reviewConverter.toResponseDTO(savedReview);
     }
