@@ -42,10 +42,11 @@ public class DeliveryController {
     @GetMapping("/search")
     public ResponseEntity<PageResponse<DeliveryResponseDTO>> search(
             @RequestParam(required = false) String query,
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "9") int size) {
 
-        PageResponse<DeliveryResponseDTO> result = deliveryService.searchDeliveries(query, page, size);
+        PageResponse<DeliveryResponseDTO> result = deliveryService.searchDeliveries(query, status, page, size);
         return ResponseEntity.ok(result);
     }
 }

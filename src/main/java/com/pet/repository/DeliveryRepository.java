@@ -21,6 +21,7 @@ public interface DeliveryRepository extends JpaRepository<Delivery, String> {
     @Query("SELECT d FROM Delivery d JOIN d.order o JOIN o.user u " +
             "WHERE LOWER(d.trackingNumber) LIKE LOWER(:term) " +
             "OR LOWER(o.phoneNumber) LIKE LOWER(:term) " +
-            "OR LOWER(u.fullName) LIKE LOWER(:term)")
-    Page<Delivery> searchDeliveries(@Param("term") String term, Pageable pageable);
+            "OR LOWER(u.fullName) LIKE LOWER(:term)" +
+            "AND (:status IS NULL OR d.deliveryStatus = :status)")
+    Page<Delivery> searchDeliveries(@Param("term") String term, @Param("status") DeliveryStatus status, Pageable pageable);
 }

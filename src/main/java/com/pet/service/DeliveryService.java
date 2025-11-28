@@ -10,5 +10,5 @@ public interface DeliveryService {
 
     DeliveryResponseDTO updateDeliveryStatus(String deliveryId, String status);
 
-    PageResponse<DeliveryResponseDTO> searchDeliveries(String query, int page, int size);
+    PageResponse<DeliveryResponseDTO> searchDeliveries(String query, String status, int page, int size);
 }

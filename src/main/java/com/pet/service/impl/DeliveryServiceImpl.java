@@ -83,16 +83,23 @@ public class DeliveryServiceImpl implements DeliveryService {
     }
 
     @Override
-    public PageResponse<DeliveryResponseDTO> searchDeliveries(String query, int page, int size) {
+    public PageResponse<DeliveryResponseDTO> searchDeliveries(String query, String status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
 
-        Page<Delivery> deliveryPage;
-        if (query == null || query.trim().isEmpty()) {
-            deliveryPage = deliveryRepository.findAll(pageable);
-        } else {
-            String searchTerm = "%" + query.trim().toLowerCase() + "%";
-            deliveryPage = deliveryRepository.searchDeliveries(searchTerm, pageable);
+        String keyword = (query != null && !query.trim().isEmpty())
+                ? "%" + query.trim().toLowerCase() + "%"
+                : null;
+
+        DeliveryStatus statusEnum = null;
+        if (status != null && !status.trim().isEmpty()) {
+            try {
+                statusEnum = DeliveryStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // status không hợp lệ → bỏ qua
+            }
         }
+
+        Page<Delivery> deliveryPage = deliveryRepository.searchDeliveries(keyword, statusEnum, pageable);
 
         List<DeliveryResponseDTO> content = deliveryPage.getContent().stream()
                 .map(deliveryConverter::toResponseDTO)
