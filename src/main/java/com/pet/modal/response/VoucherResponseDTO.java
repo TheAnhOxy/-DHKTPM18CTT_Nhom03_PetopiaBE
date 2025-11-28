@@ -19,4 +19,7 @@ public class VoucherResponseDTO {
     private LocalDate startDate;
     private LocalDate endDate;
     private Integer maxUsage;
+    private Integer usedCount;
+    private String imageUrl;
+    private String status;
 }

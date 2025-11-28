@@ -34,6 +34,15 @@ public class VoucherConverter {
         if(voucher.getVoucherId() == null){
             voucher.setVoucherId(generateVoucherId());
         }
+        if (voucher.getVoucherId() == null) {
+            voucher.setStatus(PromotionVoucherStatus.ACTIVE);
+        } else {
+            if (requestDTO.getStatus() != null &&
+                    ("ACTIVE".equalsIgnoreCase(requestDTO.getStatus()) || "INACTIVE".equalsIgnoreCase(requestDTO.getStatus()))) {
+                voucher.setStatus(PromotionVoucherStatus.valueOf(requestDTO.getStatus().toUpperCase()));
+            }
+            // Nếu frontend không gửi status → giữ nguyên status cũ
+        }
         return voucher;
     }
 
