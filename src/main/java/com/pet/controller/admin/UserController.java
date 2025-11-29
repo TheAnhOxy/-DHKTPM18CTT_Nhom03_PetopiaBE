@@ -74,4 +74,19 @@ public class UserController {
                         .build()
         );
     }
+
+    @GetMapping("/list")
+    public ResponseEntity<ApiResponse> getUserList(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        var result = userService.getAllUsers(page, size);
+        return ResponseEntity.ok(
+                ApiResponse.builder()
+                        .status(200)
+                        .message("Lấy danh sách người dùng thành công")
+                        .data(result)
+                        .build()
+        );
+    }
+
 }
