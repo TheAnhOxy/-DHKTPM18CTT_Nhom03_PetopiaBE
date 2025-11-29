@@ -74,4 +74,36 @@ public class UserController {
                         .build()
         );
     }
+
+    @GetMapping("/list")
+    public ResponseEntity<ApiResponse> getUserList(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        var result = userService.getAllUsers(page, size);
+        return ResponseEntity.ok(
+                ApiResponse.builder()
+                        .status(200)
+                        .message("Lấy danh sách người dùng thành công")
+                        .data(result)
+                        .build()
+        );
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse> searchUsers(@ModelAttribute UserSearchRequestDTO request) {
+        var result = userService.searchUsers(
+                request.getKeyword(),
+                request.getRole(),
+                request.getIsActive(),
+                request.getPage(),
+                request.getSize()
+        );
+        return ResponseEntity.ok(
+                ApiResponse.builder()
+                        .status(200)
+                        .message("Tìm kiếm người dùng thành công")
+                        .data(result)
+                        .build()
+        );
+    }
 }

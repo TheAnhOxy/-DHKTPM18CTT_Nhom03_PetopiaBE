@@ -2,6 +2,7 @@ package com.pet.service.impl;
 
 import com.pet.converter.VoucherConverter;
 import com.pet.entity.Voucher;
+import com.pet.enums.PromotionType;
 import com.pet.enums.PromotionVoucherStatus;
 import com.pet.enums.VoucherDiscountType;
 import com.pet.modal.request.ApplyVoucherRequestDTO;
@@ -108,11 +109,11 @@ public class VoucherServiceImpl implements VoucherService {
 
         VoucherDiscountType discountTypeEnum = null;
         if (req.getDiscountType() != null && !"all".equalsIgnoreCase(req.getDiscountType())) {
-            try {
-                discountTypeEnum = VoucherDiscountType.valueOf(req.getDiscountType().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                // nếu frontend gửi sai → bỏ qua filter
-            }
+            discountTypeEnum = switch (req.getDiscountType().toUpperCase()) {
+                case "PERCENTAGE" -> VoucherDiscountType.PERCENTAGE;
+                case "FIXED_AMOUNT" -> VoucherDiscountType.FIXED_AMOUNT;
+                default -> null;
+            };
         }
 
         Page<Voucher> result = voucherRepository.searchVouchers(kw, statusEnum, discountTypeEnum, pageable);

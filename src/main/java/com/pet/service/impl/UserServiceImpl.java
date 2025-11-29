@@ -17,6 +17,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -77,7 +78,7 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public PageResponse<UserResponseDTO> getAllUsers(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
         return userConverter.toPageResponse(userRepository.findAll(pageable));
     }
 
@@ -254,6 +255,28 @@ public class UserServiceImpl implements IUserService {
             }
         }
         return userConverter.toUserResponseDTO(savedUser);
+    }
+
+    @Override
+    public PageResponse<UserResponseDTO> searchUsers(String keyword, String roleStr, Boolean isActive, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
+
+        String keywordPattern = null;
+        if (StringUtils.hasText(keyword)) {
+            keywordPattern = "%" + keyword.trim().toLowerCase() + "%";
+        }
+
+        UserRole role = null;
+        if (StringUtils.hasText(roleStr)) {
+            try {
+                role = UserRole.valueOf(roleStr.trim().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // Role không hợp lệ → bỏ qua filter role (không throw error)
+            }
+        }
+
+        Page<User> userPage = userRepository.searchUsers(keywordPattern, role, isActive, pageable);
+        return userConverter.toPageResponse(userPage);
     }
 
     private void checkDuplicateForUpdate(String newPhone, String newEmail, String currentUserId, String newUserName) {

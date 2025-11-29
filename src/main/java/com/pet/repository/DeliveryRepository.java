@@ -19,12 +19,19 @@ public interface DeliveryRepository extends JpaRepository<Delivery, String> {
     @Query("SELECT COUNT(d) FROM Delivery d WHERE d.deliveryStatus IN (com.pet.enums.DeliveryStatus.SHIPPED, com.pet.enums.DeliveryStatus.IN_TRANSIT)")
     Long countShippingOrders();
 
-    @Query("SELECT d FROM Delivery d JOIN d.order o JOIN o.user u " +
-            "WHERE LOWER(d.trackingNumber) LIKE LOWER(:term) " +
-            "OR LOWER(o.phoneNumber) LIKE LOWER(:term) " +
-            "OR LOWER(u.fullName) LIKE LOWER(:term)" +
-            "AND (:status IS NULL OR d.deliveryStatus = :status)")
-    Page<Delivery> searchDeliveries(@Param("term") String term, @Param("status") DeliveryStatus status, Pageable pageable);
+    @Query("""
+        SELECT d FROM Delivery d JOIN d.order o JOIN o.user u WHERE (
+                (:term IS NULL) OR 
+                LOWER(d.trackingNumber) LIKE :term OR 
+                LOWER(o.phoneNumber) LIKE :term OR 
+                LOWER(u.fullName) LIKE :term)
+        AND (:status IS NULL OR d.deliveryStatus = :status)
+    """)
+    Page<Delivery> searchDeliveries(
+            @Param("term") String term,
+            @Param("status") DeliveryStatus status,
+            Pageable pageable
+    );
 
     Optional<Delivery> findByOrder_OrderId(String orderId);
 }
