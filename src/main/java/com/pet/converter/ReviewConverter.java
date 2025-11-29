@@ -22,6 +22,7 @@ public class ReviewConverter {
         // Map các trường cơ bản tự động (reviewId, rating, comment, reply...)
         ReviewResponseDTO dto = modelMapper.getModelMapper().map(review, ReviewResponseDTO.class);
 
+        dto.setReviewImageUrl(review.getImageUrl());
         // --- 1. MAP THÔNG TIN PET & ẢNH PET ---
         if (review.getPet() != null) {
             dto.setPetId(review.getPet().getPetId());
@@ -35,7 +36,7 @@ public class ReviewConverter {
                 String petImageUrl = review.getPet().getImages().stream()
                         .filter(img -> Boolean.TRUE.equals(img.getIsThumbnail())) // Lọc ảnh thumbnail
                         .map(PetImage::getImageUrl) // Lấy URL
-                        .findFirst() // Lấy cái đầu tiên tìm thấy
+                        .findFirst()
                         .orElse(null);
 
                 // Cách 2: Nếu không có thumbnail set cứng, lấy bừa ảnh đầu tiên trong list
