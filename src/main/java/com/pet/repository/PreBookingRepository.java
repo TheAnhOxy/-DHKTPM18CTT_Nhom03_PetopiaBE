@@ -25,4 +25,6 @@ public interface PreBookingRepository extends JpaRepository<PreBooking, String> 
             "(:status IS NULL OR p.status = :status) AND " +
             "(:keyword IS NULL OR p.pet.name LIKE %:keyword% OR p.user.fullName LIKE %:keyword%)")
     Page<PreBooking> searchBookings(BookingStatus status, String keyword, Pageable pageable);
+    long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+    long count();
 }
