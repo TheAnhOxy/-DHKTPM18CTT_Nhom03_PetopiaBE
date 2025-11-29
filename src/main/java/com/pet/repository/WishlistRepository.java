@@ -29,4 +29,6 @@ public interface WishlistRepository extends JpaRepository<Wishlist, String> {
             "GROUP BY p.petId, p.name, p.price " +
             "ORDER BY COUNT(w) DESC")
     Page<TopFavoritedPetDTO> findTopFavoritedPets(Pageable pageable);
+
+    long count();
 }

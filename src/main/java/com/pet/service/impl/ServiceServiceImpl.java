@@ -1,5 +1,6 @@
 package com.pet.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pet.converter.ServiceConverter;
 import com.pet.entity.BookingService;
 import com.pet.entity.Service;
@@ -13,6 +14,7 @@ import com.pet.modal.response.ServiceResponseDTO;
 import com.pet.repository.BookingServiceRepository;
 import com.pet.repository.ServiceRepository;
 import com.pet.repository.UserRepository;
+import com.pet.service.CloudinaryService;
 import com.pet.service.ServiceManagement;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +24,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @org.springframework.stereotype.Service
@@ -33,12 +37,14 @@ public class ServiceServiceImpl implements ServiceManagement {
     @Autowired private UserRepository userRepository;
     @Autowired private ServiceConverter serviceConverter;
     @Autowired private ModelMapper modelMapper;
-
+    @Autowired private CloudinaryService cloudinaryService;
+    @Autowired private ObjectMapper objectMapper;
 
     @Override
-    @Cacheable(value = "services_list", key = "#page + '-' + #size")
-    public PageResponse<ServiceResponseDTO> getAllServices(int page, int size) {
-        Page<com.pet.entity.Service> services = serviceRepository.findAll(PageRequest.of(page, size));
+    @Cacheable(value = "services_list", key = "#keyword + '-' + #page + '-' + #size") // Cache theo cả keyword
+    public PageResponse<ServiceResponseDTO> getAllServices(String keyword, int page, int size) {
+        // Gọi hàm search mới
+        Page<com.pet.entity.Service> services = serviceRepository.searchServices(keyword, PageRequest.of(page, size));
         return serviceConverter.toServicePageResponse(services);
     }
 
@@ -144,5 +150,53 @@ public class ServiceServiceImpl implements ServiceManagement {
         } catch (NumberFormatException e) {
             return "BS" + System.currentTimeMillis();
         }
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "services_list", allEntries = true)
+    public ServiceResponseDTO createServiceWithImage(String serviceJson, MultipartFile image) throws IOException {
+        // 1. Convert String JSON -> DTO
+        ServiceRequestDTO request = objectMapper.readValue(serviceJson, ServiceRequestDTO.class);
+
+        // 2. Upload ảnh nếu có
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = cloudinaryService.uploadImage(image);
+            request.setImageUrl(imageUrl);
+        }
+
+        // 3. Map sang Entity và Lưu
+        com.pet.entity.Service service = new com.pet.entity.Service();
+        service.setServiceId(generateServiceId());
+        modelMapper.map(request, service);
+
+        return serviceConverter.toServiceResponseDTO(serviceRepository.save(service));
+    }
+
+    // === 2. CẬP NHẬT DỊCH VỤ (XỬ LÝ JSON + ẢNH) ===
+    @Override
+    @Transactional
+    @CacheEvict(value = "services_list", allEntries = true)
+    public ServiceResponseDTO updateServiceWithImage(String id, String serviceJson, MultipartFile image) throws IOException {
+        // 1. Tìm bản ghi cũ
+        com.pet.entity.Service service = serviceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Dịch vụ không tồn tại"));
+
+        // 2. Convert String JSON -> DTO
+        ServiceRequestDTO request = objectMapper.readValue(serviceJson, ServiceRequestDTO.class);
+
+        // 3. Upload ảnh mới nếu có (Nếu không gửi ảnh thì giữ nguyên ảnh cũ trong DB)
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = cloudinaryService.uploadImage(image);
+            request.setImageUrl(imageUrl);
+        } else {
+            // Nếu DTO không có ảnh mới, giữ lại ảnh cũ từ Entity
+            // (ModelMapper mặc định sẽ set null nếu request.imageUrl null, nên cần set lại thủ công hoặc config skip null)
+            request.setImageUrl(service.getImageUrl());
+        }
+
+        // 4. Map và Lưu
+        modelMapper.map(request, service);
+        return serviceConverter.toServiceResponseDTO(serviceRepository.save(service));
     }
 }

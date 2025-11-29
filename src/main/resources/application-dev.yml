@@ -3,9 +3,7 @@ spring:
     url: jdbc:mysql://127.0.0.1:3306/petshop
     username: root
 #    password: root
-    password: sapassword
-#    password: Theanh@123
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    password: Theanh@123
 
   data:
     redis:
@@ -14,10 +12,10 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-#    username: theanh199405023@gmail.com
-#    password: lbwcahcnaealcyzb
-    username: duchaunguyen131@gmail.com
-    password: doxdulfffjnccpoy
+    username: theanh199405023@gmail.com
+    password: lbwcahcnaealcyzb
+#    username: duchaunguyen131@gmail.com
+#    password: doxdulfffjnccpoy
 
     properties:
       mail:

@@ -55,6 +55,13 @@ public class DeliveryServiceImpl implements DeliveryService {
     }
 
     @Override
+    public DeliveryResponseDTO getDeliveryByOrderId(String orderId) {
+        return deliveryRepository.findByOrder_OrderId(orderId)
+                .map(deliveryConverter::toResponseDTO)
+                .orElse(null);
+    }
+
+    @Override
     public DeliveryResponseDTO updateDeliveryStatus(String deliveryId, String status) {
         Delivery delivery = deliveryRepository.findById(deliveryId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng: " + deliveryId));

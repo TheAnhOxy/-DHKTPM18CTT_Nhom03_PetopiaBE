@@ -24,9 +24,9 @@ public class AdminReviewController {
 
         @GetMapping
         public ResponseEntity<ApiResponse> getReviews(
-                @RequestParam(required = false) String petId,    // Lọc theo Pet
-                @RequestParam(required = false) Integer rating,  // Lọc theo sao (1-5)
-                @RequestParam(required = false) Boolean isReplied, // Lọc đã/chưa trả lời
+                @RequestParam(required = false) String petId,
+                @RequestParam(required = false) Integer rating,
+                @RequestParam(required = false) Boolean isReplied,
                 @RequestParam(defaultValue = "0") int page,
                 @RequestParam(defaultValue = "10") int size) {
 

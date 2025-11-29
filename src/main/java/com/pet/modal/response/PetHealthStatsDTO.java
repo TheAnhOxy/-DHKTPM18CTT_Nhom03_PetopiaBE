@@ -1,12 +1,16 @@
 package com.pet.modal.response;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PetHealthStatsDTO {
-    private long healthyPets;      // Khỏe mạnh (Dựa trên status hoặc healthStatus)
-    private long vaccinatedPets;   // Đã tiêm (Trạng thái Da_TIEM)
-    private long upcomingVaccines; // Sắp tiêm (Trong 7 ngày tới)
+    private long healthyPets;
+    private long vaccinatedPets;
+    private long upcomingVaccines;
 }

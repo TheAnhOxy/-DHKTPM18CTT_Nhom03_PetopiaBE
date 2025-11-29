@@ -8,6 +8,8 @@ public interface DeliveryService {
 
     DeliveryResponseDTO getDeliveryById(String deliveryId);
 
+    DeliveryResponseDTO getDeliveryByOrderId(String orderId);
+
     DeliveryResponseDTO updateDeliveryStatus(String deliveryId, String status);
 
     PageResponse<DeliveryResponseDTO> searchDeliveries(String query, String status, int page, int size);

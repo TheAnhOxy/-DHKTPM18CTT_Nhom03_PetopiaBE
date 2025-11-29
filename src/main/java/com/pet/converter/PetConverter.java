@@ -1,9 +1,7 @@
 package com.pet.converter;
 
 import com.pet.config.ModelMapperConfig;
-import com.pet.entity.Category;
-import com.pet.entity.Pet;
-import com.pet.entity.PetImage;
+import com.pet.entity.*;
 import com.pet.enums.PetFurType;
 import com.pet.enums.PetGender;
 import com.pet.enums.PetStatus;
@@ -21,10 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -54,6 +49,17 @@ public class PetConverter {
             dto.setCategoryId(pet.getCategory().getCategoryId());
             dto.setCategoryName(pet.getCategory().getName());
         }
+
+        // Lấy ảnh thumbnail chính
+        if (pet.getImages() != null && !pet.getImages().isEmpty()) {
+            Optional<PetImage> mainImageOpt = pet.getImages().stream()
+                    .filter(img -> Boolean.TRUE.equals(img.getIsThumbnail()))
+                    .findFirst();
+            String mainImageUrl = mainImageOpt.map(PetImage::getImageUrl)
+                    .orElse(pet.getImages().iterator().next().getImageUrl());
+            dto.setMainImageUrl(mainImageUrl);
+        }
+
         if (pet.getImages() != null && !pet.getImages().isEmpty()) {
             List<PetImageResponseDTO> imageDTOs = pet.getImages().stream()
                     .map(img -> modelMapper.getModelMapper().map(img, PetImageResponseDTO.class))
@@ -62,6 +68,10 @@ public class PetConverter {
         } else {
             dto.setImages(new ArrayList<>());
         }
+
+        // Tính rating trung bình và số lượng đánh giá
+        dto.setRating(calculateAverageRating(pet));
+        dto.setReviewCount(pet.getReviews() != null ? pet.getReviews().size() : 0);
 
         return dto;
     }
@@ -92,9 +102,20 @@ public class PetConverter {
 
     public Pet mapToEntity(PetRequestDTO dto, Pet pet) {
         Set<PetImage> oldImages = pet.getImages();
+        Set<PreBooking> oldPreBookings = pet.getPreBookings();
+        Set<Review> oldReviews = pet.getReviews();
+        Set<Vaccin> oldVaccines = pet.getVaccines();
+        Set<Wishlist> wishlists = pet.getWishlists();
+        Set<OrderItem> orderItems = pet.getOrderItems();
 
         modelMapper.getModelMapper().map(dto, pet);
-        pet.setImages(oldImages);
+//        pet.setImages(oldImages);
+        pet.setImages(oldImages != null ? oldImages : new HashSet<>());
+        pet.setPreBookings(oldPreBookings != null ? oldPreBookings : new HashSet<>());
+        pet.setReviews(oldReviews != null ? oldReviews : new HashSet<>());
+        pet.setVaccines(oldVaccines != null ? oldVaccines : new HashSet<>());
+        pet.setWishlists(wishlists != null ? wishlists : new HashSet<>());
+        pet.setOrderItems(orderItems != null ? orderItems : new HashSet<>());
 
         if (pet.getPetId() != null) {
             pet.setStatus(PetStatus.valueOf(dto.getStatus().toUpperCase()));

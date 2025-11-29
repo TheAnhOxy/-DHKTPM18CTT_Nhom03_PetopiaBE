@@ -46,6 +46,11 @@ public class OrderServiceImpl implements OrderService {
     @Autowired private PromotionRepository promotionRepository;
     @Autowired private OrderPromotionRepository orderPromotionRepository;
     @Autowired private OrderVoucherRepository orderVoucherRepository;
+    @Autowired private DeliveryRepository deliveryRepository;
+    @Autowired private DeliveryHistoryRepository deliveryHistoryRepository;
+
+    // Sequence dùng để sinh orderItemId an toàn trong 1 request
+    private final AtomicInteger orderItemSequence = new AtomicInteger(0);
 
     //  Tạo Đơn Hàng ---
 //    @Override
@@ -253,34 +258,9 @@ public class OrderServiceImpl implements OrderService {
             order.setOrderVouchers(orderVouchers);
         }
 
-        //  Promotion (Tự động áp dụng)
-        List<Promotion> activePromos = promotionRepository.findActivePromotions(LocalDate.now());
-        for (Promotion promo : activePromos) {
-            // Logic check: Ví dụ promo cho đơn hàng > X tiền
-            if (promo.getMinOrderAmount() != null && itemsTotal >= promo.getMinOrderAmount()) {
-                double promoDiscount = 0;
-
-                if (promo.getPromotionType() == PromotionType.DISCOUNT) {
-                    // Giả sử Promotion cũng có discountValue (tiền mặt) hoặc %
-                    // Ở đây demo giảm thẳng tiền
-                    promoDiscount = promo.getDiscountValue();
-                }
-                // Logic khác: FREESHIP, BUNDLE... (tùy bạn implement thêm)
-
-                totalDiscount += promoDiscount;
-
-                OrderPromotion op = new OrderPromotion();
-                op.setOrderPromotionId(generateOrderPromotionId());
-                op.setOrder(order);
-                op.setPromotion(promo);
-                op.setDiscountApplied(promoDiscount);
-                orderPromotions.add(op);
-
-                // Tăng lượt dùng promo
-                promo.setUsedCount(promo.getUsedCount() + 1);
-                promotionRepository.save(promo);
-            }
-        }
+        //  Promotion (Tự động áp dụng) - TẠM THỜI TẮT, CHỈ ÁP DỤNG VOUCHER THEO YÊU CẦU
+        //  Nếu sau này muốn bật lại auto promotion, có thể bật đoạn code cũ hoặc
+        //  bọc logic dưới vào một điều kiện cấu hình.
         order.setOrderPromotions(orderPromotions);
 
 
@@ -295,7 +275,10 @@ public class OrderServiceImpl implements OrderService {
 
         //  Lưu & Thanh toán
         Order savedOrder = orderRepository.save(order);
-         orderItemRepository.saveAll(orderItems);
+        orderItemRepository.saveAll(orderItems);
+
+        // Tạo Delivery ban đầu cho đơn
+        createInitialDeliveryForOrder(savedOrder);
 
         handlePaymentAndEmail(savedOrder, request.getPaymentMethod());
 
@@ -447,19 +430,216 @@ public class OrderServiceImpl implements OrderService {
         emailService.sendEmail(
                 order.getUser().getEmail(),
                 "[Petopia] Thanh toán thành công đơn #" + orderId,
-                buildPaymentSuccessEmail(order)
+                buildPaymentSuccessEmail(order, payment)
         );
     }
 
-    private String buildPaymentSuccessEmail(Order order) {
+    private String buildPaymentSuccessEmail(Order order, Payment payment) {
+        // Lấy thông tin địa chỉ
+        String shippingAddress = "Chưa có thông tin";
+        if (order.getAddress() != null) {
+            Address addr = order.getAddress();
+            shippingAddress = String.format("%s, %s, %s, %s",
+                    addr.getStreet(), addr.getWard(), addr.getDistrict(), addr.getProvince());
+        }
+
+        // Lấy phương thức thanh toán
+        String paymentMethodText = payment.getPaymentMethod() == PaymentMethod.BANK_TRANSFER 
+                ? "Chuyển khoản ngân hàng" 
+                : "Thanh toán khi nhận hàng (COD)";
+
+        // Format ngày đặt hàng
+        String orderDate = order.getCreatedAt() != null 
+                ? order.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                : "N/A";
+
+        // Tính tổng tiền sản phẩm (trước khi trừ giảm giá và cộng phí ship)
+        double itemsSubtotal = order.getTotalAmount() 
+                - (order.getShippingFee() != null ? order.getShippingFee() : 0.0)
+                + (order.getDiscountAmount() != null ? order.getDiscountAmount() : 0.0);
+
+        // Build danh sách sản phẩm
+        StringBuilder itemsHtml = new StringBuilder();
+        if (order.getOrderItems() != null && !order.getOrderItems().isEmpty()) {
+            for (OrderItem item : order.getOrderItems()) {
+                String petName = item.getPet() != null ? item.getPet().getName() : "Sản phẩm";
+                int quantity = item.getQuantity() != null ? item.getQuantity() : 1;
+                double price = item.getPriceAtPurchase() != null ? item.getPriceAtPurchase() : 0.0;
+                double itemTotal = price * quantity;
+                
+                itemsHtml.append(String.format("""
+                    <tr style="border-bottom: 1px solid #e0e0e0;">
+                        <td style="padding: 12px; vertical-align: top; word-wrap: break-word;">
+                            <strong>%s</strong>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">%d</td>
+                        <td style="padding: 12px; text-align: right; word-wrap: break-word;">%,.0f VNĐ</td>
+                        <td style="padding: 12px; text-align: right; word-wrap: break-word;"><strong>%,.0f VNĐ</strong></td>
+                    </tr>
+                    """, petName, quantity, price, itemTotal));
+            }
+        } else {
+            itemsHtml.append("""
+                <tr>
+                    <td colspan="4" style="padding: 20px; text-align: center; color: #888;">
+                        Không có sản phẩm
+                    </td>
+                </tr>
+                """);
+        }
+
+        // Lấy tên khách hàng
+        String customerName = order.getUser() != null ? order.getUser().getFullName() : "Quý khách";
+
         return String.format("""
-            <div style="font-family: Arial, sans-serif;">
-                <h2 style="color: #27ae60;">Thanh toán thành công!</h2>
-                <p>Chúng tôi đã nhận được tiền cho đơn hàng <strong>%s</strong>.</p>
-                <p>Trạng thái đơn hàng: <strong>Đã giao (DELIVERED)</strong></p>
-                <p>Cảm ơn bạn!</p>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px;">
+                <!-- Auto Email Notice -->
+                <div style="text-align: center; color: #888; font-size: 12px; margin-bottom: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 5px;">
+                    <p style="margin: 0;">⚠️ Đây là email tự động. Vui lòng không trả lời email này</p>
+                </div>
+
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #27ae60 0%%, #2ecc71 100%%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 28px;">✓ Xác nhận thanh toán thành công</h1>
+                </div>
+
+                <!-- Main Content -->
+                <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
+                    <!-- Greeting -->
+                    <div style="margin-bottom: 25px;">
+                        <p style="font-size: 16px; color: #2c3e50; margin: 0 0 15px 0;">
+                            Xin chào <strong>%s</strong>,
+                        </p>
+                        <p style="font-size: 15px; color: #555; margin: 0 0 15px 0; line-height: 1.6;">
+                            Cảm ơn quý khách đã tin tưởng sử dụng dịch vụ của Petopia.
+                        </p>
+                        <p style="font-size: 15px; color: #555; margin: 0; line-height: 1.6;">
+                            Petopia xác nhận quý khách đã thanh toán thành công đơn hàng thú cưng.
+                        </p>
+                    </div>
+
+                    <!-- Security Warning -->
+                    <div style="background-color: #fff3cd; border: 2px solid #ffc107; border-left: 5px solid #ff9800; padding: 15px; border-radius: 5px; margin-bottom: 25px;">
+                        <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
+                            <strong style="font-size: 16px;">⚠️ Cảnh báo:</strong> Petopia <strong>KHÔNG</strong> bao giờ yêu cầu quý khách truy cập liên kết lạ, cung cấp mã OTP ngân hàng hoặc chuyển tiền vào tài khoản không đứng tên "<strong>NGUYEN DUC HAU</strong>". Vui lòng chỉ sử dụng website Petopia để kiểm tra thông tin thú cưng và thanh toán.
+                        </p>
+                    </div>
+                    <!-- Order Info -->
+                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 20px; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">
+                            Thông tin đơn hàng
+                        </h2>
+                        <table style="width: 100%%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 8px 0; color: #555; width: 140px;"><strong>Mã đơn hàng:</strong></td>
+                                <td style="padding: 8px 0; color: #2c3e50; font-size: 18px;"><strong>#%s</strong></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #555;"><strong>Ngày đặt hàng:</strong></td>
+                                <td style="padding: 8px 0; color: #2c3e50;">%s</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #555;"><strong>Trạng thái:</strong></td>
+                                <td style="padding: 8px 0; color: #27ae60; font-weight: bold;">✓ Đã giao hàng (DELIVERED)</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #555;"><strong>Phương thức thanh toán:</strong></td>
+                                <td style="padding: 8px 0; color: #2c3e50;">%s</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Products -->
+                    <div style="margin-bottom: 25px;">
+                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 20px; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">
+                            Sản phẩm đã mua
+                        </h2>
+                        <table style="width: 100%%; border-collapse: collapse; background-color: #ffffff; word-wrap: break-word;">
+                            <thead>
+                                <tr style="background-color: #f8f9fa;">
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e0e0e0; width: 35%%;">Tên sản phẩm</th>
+                                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e0e0e0; width: 15%%;">Số lượng</th>
+                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e0e0e0; width: 25%%;">Đơn giá</th>
+                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e0e0e0; width: 25%%;">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                %s
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Shipping Info -->
+                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 20px; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">
+                            Thông tin giao hàng
+                        </h2>
+                        <p style="margin: 8px 0; color: #555;"><strong>Người nhận:</strong> <span style="color: #2c3e50;">%s</span></p>
+                        <p style="margin: 8px 0; color: #555;"><strong>Số điện thoại:</strong> <span style="color: #2c3e50;">%s</span></p>
+                        <p style="margin: 8px 0; color: #555;"><strong>Địa chỉ giao hàng:</strong></p>
+                        <p style="margin: 8px 0 0 20px; color: #2c3e50; padding: 10px; background-color: #ffffff; border-left: 3px solid #27ae60; border-radius: 4px;">
+                            %s
+                        </p>
+                    </div>
+
+                    <!-- Payment Summary -->
+                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 20px; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">
+                            Tổng kết thanh toán
+                        </h2>
+                        <table style="width: 100%%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 10px 0; color: #555; width: 60%%;">Tạm tính:</td>
+                                <td style="padding: 10px 0; text-align: right; color: #2c3e50; width: 40%%; word-wrap: break-word;">%,.0f VNĐ</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px 0; color: #555;">Phí vận chuyển:</td>
+                                <td style="padding: 10px 0; text-align: right; color: #2c3e50; word-wrap: break-word;">%,.0f VNĐ</td>
+                            </tr>
+                            %s
+                            <tr style="border-top: 2px solid #27ae60; margin-top: 10px;">
+                                <td style="padding: 15px 0; font-size: 18px; color: #2c3e50;"><strong>Tổng thanh toán:</strong></td>
+                                <td style="padding: 15px 0; text-align: right; font-size: 20px; color: #27ae60; font-weight: bold; word-wrap: break-word;">%,.0f VNĐ</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Note -->
+                    <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin-bottom: 25px;">
+                        <p style="margin: 0; color: #856404; font-size: 14px;">
+                            <strong>📦 Lưu ý:</strong> Đơn hàng của bạn đã được xác nhận thanh toán thành công và đang trong quá trình giao hàng. 
+                            Chúng tôi sẽ liên hệ với bạn sớm nhất có thể.
+                        </p>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="text-align: center; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #888; font-size: 14px;">
+                        <p style="margin: 5px 0;">Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của Petopia!</p>
+                        <p style="margin: 5px 0;">Nếu có bất kỳ thắc mắc nào, vui lòng liên hệ hotline: <strong>1900-xxxx</strong></p>
+                    </div>
+                </div>
             </div>
-            """, order.getOrderId());
+            """, 
+            customerName,
+            order.getOrderId(),
+            orderDate,
+            paymentMethodText,
+            itemsHtml.toString(),
+            order.getUser() != null ? order.getUser().getFullName() : "N/A",
+            order.getPhoneNumber() != null ? order.getPhoneNumber() : "N/A",
+            shippingAddress,
+            itemsSubtotal,
+            order.getShippingFee() != null ? order.getShippingFee() : 0.0,
+            order.getDiscountAmount() != null && order.getDiscountAmount() > 0 
+                ? String.format("""
+                    <tr>
+                        <td style="padding: 10px 0; color: #555;">Giảm giá:</td>
+                        <td style="padding: 10px 0; text-align: right; color: #e74c3c; word-wrap: break-word;">-%,.0f VNĐ</td>
+                    </tr>
+                    """, order.getDiscountAmount())
+                : "",
+            order.getTotalAmount()
+        );
     }
 
     private String extractOrderId(String content) {
@@ -486,15 +666,15 @@ public class OrderServiceImpl implements OrderService {
 
     private String buildBankTransferEmail(Order order, String qrUrl, String content) {
         return String.format("""
-            <div style="font-family: Arial, sans-serif;">
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #2c3e50;">Cảm ơn bạn đã đặt hàng!</h2>
                 <p>Đơn hàng <strong>%s</strong> đang chờ thanh toán.</p>
-                <p>Tổng tiền: <strong style="font-size: 18px; color: #e74c3c;">%,.0f VNĐ</strong></p>
+                <p>Tổng tiền: <strong style="font-size: 18px; color: #e74c3c; word-wrap: break-word; display: inline-block; max-width: 100%%;">%,.0f VNĐ</strong></p>
                 
                 <div style="border: 2px dashed #3498db; padding: 15px; text-align: center; margin: 20px 0;">
                     <p>Quét mã QR để thanh toán ngay:</p>
-                    <img src="%s" alt="QR SePay" width="250" />
-                    <p style="margin-top: 10px;">Hoặc chuyển khoản với nội dung: <strong style="background: #f1c40f; padding: 5px;">%s</strong></p>
+                    <img src="%s" alt="QR SePay" width="250" style="max-width: 100%%; height: auto;" />
+                    <p style="margin-top: 10px; word-wrap: break-word;">Hoặc chuyển khoản với nội dung: <strong style="background: #f1c40f; padding: 5px; word-wrap: break-word; display: inline-block; max-width: 100%%;">%s</strong></p>
                 </div>
                 <p>Đơn hàng sẽ được xử lý ngay sau khi chúng tôi nhận được tiền.</p>
             </div>
@@ -502,15 +682,206 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private String buildCodSuccessEmail(Order order) {
+        // Lấy thông tin địa chỉ
+        String shippingAddress = "Chưa có thông tin";
+        if (order.getAddress() != null) {
+            Address addr = order.getAddress();
+            shippingAddress = String.format("%s, %s, %s, %s",
+                    addr.getStreet(), addr.getWard(), addr.getDistrict(), addr.getProvince());
+        }
+
+        // Format ngày đặt hàng
+        String orderDate = order.getCreatedAt() != null 
+                ? order.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                : "N/A";
+
+        // Tính tổng tiền sản phẩm (trước khi trừ giảm giá và cộng phí ship)
+        double itemsSubtotal = order.getTotalAmount() 
+                - (order.getShippingFee() != null ? order.getShippingFee() : 0.0)
+                + (order.getDiscountAmount() != null ? order.getDiscountAmount() : 0.0);
+
+        // Build danh sách sản phẩm
+        StringBuilder itemsHtml = new StringBuilder();
+        if (order.getOrderItems() != null && !order.getOrderItems().isEmpty()) {
+            for (OrderItem item : order.getOrderItems()) {
+                String petName = item.getPet() != null ? item.getPet().getName() : "Sản phẩm";
+                int quantity = item.getQuantity() != null ? item.getQuantity() : 1;
+                double price = item.getPriceAtPurchase() != null ? item.getPriceAtPurchase() : 0.0;
+                double itemTotal = price * quantity;
+                
+                itemsHtml.append(String.format("""
+                    <tr style="border-bottom: 1px solid #e0e0e0;">
+                        <td style="padding: 12px; vertical-align: top; word-wrap: break-word;">
+                            <strong>%s</strong>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">%d</td>
+                        <td style="padding: 12px; text-align: right; word-wrap: break-word;">%,.0f VNĐ</td>
+                        <td style="padding: 12px; text-align: right; word-wrap: break-word;"><strong>%,.0f VNĐ</strong></td>
+                    </tr>
+                    """, petName, quantity, price, itemTotal));
+            }
+        } else {
+            itemsHtml.append("""
+                <tr>
+                    <td colspan="4" style="padding: 20px; text-align: center; color: #888;">
+                        Không có sản phẩm
+                    </td>
+                </tr>
+                """);
+        }
+
+        // Lấy tên khách hàng
+        String customerName = order.getUser() != null ? order.getUser().getFullName() : "Quý khách";
+
         return String.format("""
-            <div style="font-family: Arial, sans-serif;">
-                <h2 style="color: #27ae60;">Mua hàng thành công!</h2>
-                <p>Đơn hàng <strong>%s</strong> đã được thanh toán bằng tiền mặt.</p>
-                <p>Trạng thái: <strong>Đã giao hàng (DELIVERED)</strong></p>
-                <p>Tổng tiền: <strong>%,.0f VNĐ</strong></p>
-                <p>Cảm ơn bạn đã mua sắm tại Petopia!</p>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 20px;">
+                <!-- Auto Email Notice -->
+                <div style="text-align: center; color: #888; font-size: 12px; margin-bottom: 10px; padding: 10px; background-color: #f0f0f0; border-radius: 5px;">
+                    <p style="margin: 0;">⚠️ Đây là email tự động. Vui lòng không trả lời email này</p>
+                </div>
+
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #27ae60 0%%, #2ecc71 100%%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 28px;">✓ Đơn hàng hoàn tất</h1>
+                </div>
+
+                <!-- Main Content -->
+                <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
+                    <!-- Greeting -->
+                    <div style="margin-bottom: 25px;">
+                        <p style="font-size: 16px; color: #2c3e50; margin: 0 0 15px 0;">
+                            Xin chào <strong>%s</strong>,
+                        </p>
+                        <p style="font-size: 15px; color: #555; margin: 0 0 15px 0; line-height: 1.6;">
+                            Cảm ơn quý khách đã tin tưởng sử dụng dịch vụ của Petopia.
+                        </p>
+                        <p style="font-size: 15px; color: #555; margin: 0; line-height: 1.6;">
+                            Petopia xác nhận quý khách đã thanh toán thành công đơn hàng thú cưng bằng tiền mặt (COD).
+                        </p>
+                    </div>
+
+                    <!-- Security Warning -->
+                    <div style="background-color: #fff3cd; border: 2px solid #ffc107; border-left: 5px solid #ff9800; padding: 15px; border-radius: 5px; margin-bottom: 25px;">
+                        <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
+                            <strong style="font-size: 16px;">⚠️ Cảnh báo:</strong> Petopia <strong>KHÔNG</strong> bao giờ yêu cầu quý khách truy cập liên kết lạ, cung cấp mã OTP ngân hàng hoặc chuyển tiền vào tài khoản không đứng tên "<strong>NGUYEN DUC HAU</strong>". Vui lòng chỉ sử dụng website Petopia để kiểm tra thông tin thú cưng và thanh toán.
+                        </p>
+                    </div>
+
+                    <!-- Order Info -->
+                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 20px; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">
+                            Thông tin đơn hàng
+                        </h2>
+                        <table style="width: 100%%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 8px 0; color: #555; width: 140px;"><strong>Mã đơn hàng:</strong></td>
+                                <td style="padding: 8px 0; color: #2c3e50; font-size: 18px;"><strong>#%s</strong></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #555;"><strong>Ngày đặt hàng:</strong></td>
+                                <td style="padding: 8px 0; color: #2c3e50;">%s</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #555;"><strong>Trạng thái:</strong></td>
+                                <td style="padding: 8px 0; color: #27ae60; font-weight: bold;">✓ Đã giao hàng (DELIVERED)</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #555;"><strong>Phương thức thanh toán:</strong></td>
+                                <td style="padding: 8px 0; color: #2c3e50;">Thanh toán khi nhận hàng (COD)</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Products -->
+                    <div style="margin-bottom: 25px;">
+                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 20px; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">
+                            Sản phẩm đã mua
+                        </h2>
+                        <table style="width: 100%%; border-collapse: collapse; background-color: #ffffff; word-wrap: break-word;">
+                            <thead>
+                                <tr style="background-color: #f8f9fa;">
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e0e0e0; width: 35%%;">Tên sản phẩm</th>
+                                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e0e0e0; width: 15%%;">Số lượng</th>
+                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e0e0e0; width: 25%%;">Đơn giá</th>
+                                    <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e0e0e0; width: 25%%;">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                %s
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Shipping Info -->
+                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 20px; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">
+                            Thông tin giao hàng
+                        </h2>
+                        <p style="margin: 8px 0; color: #555;"><strong>Người nhận:</strong> <span style="color: #2c3e50;">%s</span></p>
+                        <p style="margin: 8px 0; color: #555;"><strong>Số điện thoại:</strong> <span style="color: #2c3e50;">%s</span></p>
+                        <p style="margin: 8px 0; color: #555;"><strong>Địa chỉ giao hàng:</strong></p>
+                        <p style="margin: 8px 0 0 20px; color: #2c3e50; padding: 10px; background-color: #ffffff; border-left: 3px solid #27ae60; border-radius: 4px;">
+                            %s
+                        </p>
+                    </div>
+
+                    <!-- Payment Summary -->
+                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
+                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 20px; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">
+                            Tổng kết thanh toán
+                        </h2>
+                        <table style="width: 100%%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 10px 0; color: #555; width: 60%%;">Tạm tính:</td>
+                                <td style="padding: 10px 0; text-align: right; color: #2c3e50; width: 40%%; word-wrap: break-word;">%,.0f VNĐ</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px 0; color: #555;">Phí vận chuyển:</td>
+                                <td style="padding: 10px 0; text-align: right; color: #2c3e50; word-wrap: break-word;">%,.0f VNĐ</td>
+                            </tr>
+                            %s
+                            <tr style="border-top: 2px solid #27ae60; margin-top: 10px;">
+                                <td style="padding: 15px 0; font-size: 18px; color: #2c3e50;"><strong>Tổng thanh toán:</strong></td>
+                                <td style="padding: 15px 0; text-align: right; font-size: 20px; color: #27ae60; font-weight: bold; word-wrap: break-word;">%,.0f VNĐ</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Note -->
+                    <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin-bottom: 25px;">
+                        <p style="margin: 0; color: #856404; font-size: 14px;">
+                            <strong>📦 Lưu ý:</strong> Đơn hàng của bạn đã được xác nhận thanh toán thành công và đang trong quá trình giao hàng. 
+                            Chúng tôi sẽ liên hệ với bạn sớm nhất có thể.
+                        </p>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="text-align: center; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #888; font-size: 14px;">
+                        <p style="margin: 5px 0;">Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của Petopia!</p>
+                        <p style="margin: 5px 0;">Nếu có bất kỳ thắc mắc nào, vui lòng liên hệ hotline: <strong>1900-xxxx</strong></p>
+                    </div>
+                </div>
             </div>
-            """, order.getOrderId(), order.getTotalAmount());
+            """, 
+            customerName,
+            order.getOrderId(),
+            orderDate,
+            itemsHtml.toString(),
+            order.getUser() != null ? order.getUser().getFullName() : "N/A",
+            order.getPhoneNumber() != null ? order.getPhoneNumber() : "N/A",
+            shippingAddress,
+            itemsSubtotal,
+            order.getShippingFee() != null ? order.getShippingFee() : 0.0,
+            order.getDiscountAmount() != null && order.getDiscountAmount() > 0 
+                ? String.format("""
+                    <tr>
+                        <td style="padding: 10px 0; color: #555;">Giảm giá:</td>
+                        <td style="padding: 10px 0; text-align: right; color: #e74c3c; word-wrap: break-word;">-%,.0f VNĐ</td>
+                    </tr>
+                    """, order.getDiscountAmount())
+                : "",
+            order.getTotalAmount()
+        );
     }
 
     // Helper: Tạo Payment
@@ -625,13 +996,19 @@ public class OrderServiceImpl implements OrderService {
         }
     }
     private String generateOrderItemId() {
-        String lastId = orderItemRepository.findLastOrderItemId().orElse("OI000");
-        try {
-            int num = Integer.parseInt(lastId.substring(2));
-            return String.format("OI%03d", num + 1);
-        } catch (Exception e) {
-            return "OI001";
+        // Lấy lastId một lần duy nhất, sau đó dùng sequence trong bộ nhớ
+        if (orderItemSequence.get() == 0) {
+            String lastId = orderItemRepository.findLastOrderItemId().orElse("OI000");
+            try {
+                int current = Integer.parseInt(lastId.substring(2));
+                orderItemSequence.set(current);
+            } catch (Exception e) {
+                orderItemSequence.set(0);
+            }
         }
+
+        int next = orderItemSequence.incrementAndGet();
+        return String.format("OI%03d", next);
     }
 
     private String generateAddressId() {
@@ -642,6 +1019,61 @@ public class OrderServiceImpl implements OrderService {
             return String.format("A%03d", num + 1);
         } catch (Exception e) {
             return "AD" + System.currentTimeMillis();
+        }
+    }
+
+    // --- Delivery helpers ---
+    private void createInitialDeliveryForOrder(Order order) {
+        // Nếu đã có delivery rồi thì không tạo lại
+        if (order.getDelivery() != null) {
+            return;
+        }
+
+        Delivery delivery = new Delivery();
+        delivery.setDeliveryId(generateDeliveryId());
+        delivery.setOrder(order);
+        delivery.setShippingMethod(ShippingMethod.STANDARD);
+        delivery.setShippingFee(order.getShippingFee() != null ? order.getShippingFee() : 0.0);
+        delivery.setDeliveryStatus(DeliveryStatus.PREPARING);
+
+        Delivery savedDelivery = deliveryRepository.save(delivery);
+
+        DeliveryHistory history = new DeliveryHistory();
+        history.setHistoryId(generateDeliveryHistoryId());
+        history.setDelivery(savedDelivery);
+        history.setStatus(DeliveryStatus.PREPARING);
+        history.setDescription("Đơn hàng đang được chuẩn bị tại kho");
+        history.setLocation(null);
+        deliveryHistoryRepository.save(history);
+    }
+
+    private String generateDeliveryId() {
+        String lastId = deliveryRepository
+                .findAll(PageRequest.of(0, 1, Sort.by("deliveryId").descending()))
+                .stream()
+                .findFirst()
+                .map(Delivery::getDeliveryId)
+                .orElse("D000");
+        try {
+            int num = Integer.parseInt(lastId.substring(1));
+            return String.format("D%03d", num + 1);
+        } catch (Exception e) {
+            return "D" + System.currentTimeMillis();
+        }
+    }
+
+    private String generateDeliveryHistoryId() {
+        String lastId = deliveryHistoryRepository
+                .findAll(PageRequest.of(0, 1, Sort.by("historyId").descending()))
+                .stream()
+                .findFirst()
+                .map(DeliveryHistory::getHistoryId)
+                .orElse("DH000");
+        try {
+            int num = Integer.parseInt(lastId.substring(2));
+            return String.format("DH%03d", num + 1);
+        } catch (Exception e) {
+            return "DH" + System.currentTimeMillis();
         }
     }
 
