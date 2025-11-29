@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface PetRepository extends JpaRepository<Pet, String>, JpaSpecificationExecutor<Pet> {
@@ -22,4 +23,7 @@ public interface PetRepository extends JpaRepository<Pet, String>, JpaSpecificat
     // Query lấy ID thú cưng lớn nhất (Ví dụ: P005)
     @Query("SELECT p.petId FROM Pet p ORDER BY p.petId DESC LIMIT 1")
     Optional<String> findMaxPetId();
+
+    // Đếm thú cưng mới thêm trong khoảng thời gian
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }

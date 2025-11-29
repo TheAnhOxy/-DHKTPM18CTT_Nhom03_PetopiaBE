@@ -34,4 +34,7 @@ public interface VaccineRepository extends JpaRepository<Vaccin, String> {
 
     @Query("SELECT v FROM Vaccin v WHERE v.pet.petId = :petId ORDER BY v.startDate DESC")
     List<Vaccin> findByPetId(String petId);
+
+    @Query("SELECT v FROM Vaccin v ORDER BY v.createdAt DESC LIMIT 10")
+    List<com.pet.entity.Vaccin> findRecentVaccines();
 }

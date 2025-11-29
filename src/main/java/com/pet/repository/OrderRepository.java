@@ -62,6 +62,8 @@ public interface OrderRepository extends JpaRepository<Order, String> {
             "GROUP BY u.userId, u.fullName, u.email, u.avatar " +
             "ORDER BY SUM(o.totalAmount) DESC")
     List<TopUserDTO> findTopSpendingUsers(Pageable pageable);
+    @Query("SELECT o FROM Order o ORDER BY o.createdAt DESC LIMIT 10")
+    List<Order> findRecentOrders();
 
     // 1. Tính tổng doanh thu trong khoảng thời gian (Chỉ tính DELIVERED)
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.status = 'DELIVERED' AND o.createdAt BETWEEN :startDate AND :endDate")
@@ -80,6 +82,11 @@ public interface OrderRepository extends JpaRepository<Order, String> {
             "ORDER BY MONTH(o.created_at) ASC", nativeQuery = true)
     List<Object[]> getMonthlyRevenue(@Param("year") int year);
 
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.status IN (" +
+            "com.pet.enums.OrderStatus.PENDING, " +
+            "com.pet.enums.OrderStatus.CONFIRMED, " +
+            "com.pet.enums.OrderStatus.SHIPPED)")
+    long countProcessingOrders();
 
     // 2. Đếm tổng đơn hàng trong khoảng
     long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
