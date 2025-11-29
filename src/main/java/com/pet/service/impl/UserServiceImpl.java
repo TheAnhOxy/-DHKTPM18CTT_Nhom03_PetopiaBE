@@ -257,6 +257,28 @@ public class UserServiceImpl implements IUserService {
         return userConverter.toUserResponseDTO(savedUser);
     }
 
+    @Override
+    public PageResponse<UserResponseDTO> searchUsers(String keyword, String roleStr, Boolean isActive, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
+
+        String keywordPattern = null;
+        if (StringUtils.hasText(keyword)) {
+            keywordPattern = "%" + keyword.trim().toLowerCase() + "%";
+        }
+
+        UserRole role = null;
+        if (StringUtils.hasText(roleStr)) {
+            try {
+                role = UserRole.valueOf(roleStr.trim().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // Role không hợp lệ → bỏ qua filter role (không throw error)
+            }
+        }
+
+        Page<User> userPage = userRepository.searchUsers(keywordPattern, role, isActive, pageable);
+        return userConverter.toPageResponse(userPage);
+    }
+
     private void checkDuplicateForUpdate(String newPhone, String newEmail, String currentUserId, String newUserName) {
         if (newPhone != null) {
             Optional<User> userByPhone = userRepository.findByPhoneNumber(newPhone);

@@ -21,4 +21,6 @@ public interface IUserService {
     void setDefaultAddress(String userId, String addressId);
 
     UserResponseDTO saveUser(UserSaveRequestDTO request);
+
+    PageResponse<UserResponseDTO> searchUsers(String keyword, String role, Boolean isActive, int page, int size);
 }

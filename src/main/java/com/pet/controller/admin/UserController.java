@@ -89,4 +89,21 @@ public class UserController {
         );
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse> searchUsers(@ModelAttribute UserSearchRequestDTO request) {
+        var result = userService.searchUsers(
+                request.getKeyword(),
+                request.getRole(),
+                request.getIsActive(),
+                request.getPage(),
+                request.getSize()
+        );
+        return ResponseEntity.ok(
+                ApiResponse.builder()
+                        .status(200)
+                        .message("Tìm kiếm người dùng thành công")
+                        .data(result)
+                        .build()
+        );
+    }
 }
