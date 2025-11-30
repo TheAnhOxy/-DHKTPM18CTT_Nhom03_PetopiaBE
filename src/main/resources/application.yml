@@ -10,13 +10,10 @@ spring:
   ai:
     openai:
       api-key: "AIzaSyA-GMdd3hxvZkkZDWFFHwO_EGNaSOvq8lA"
-      # Xóa dấu / ở cuối đường dẫn
       base-url: "https://generativelanguage.googleapis.com/v1beta/openai"
       chat:
         options:
-          # Thử đổi sang tên đầy đủ hoặc bản mới nhất
           model: "gemini-1.5-flash-latest"
-          # Hoặc nếu vẫn lỗi, hãy thử: "gemini-pro"
           temperature: 0.7
 
   profiles:
