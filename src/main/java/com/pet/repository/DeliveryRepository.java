@@ -34,4 +34,7 @@ public interface DeliveryRepository extends JpaRepository<Delivery, String> {
     );
 
     Optional<Delivery> findByOrder_OrderId(String orderId);
+
+    @Query("SELECT d FROM Delivery d JOIN d.order o WHERE d.trackingNumber = :trackingNumber OR o.orderId = :trackingNumber")
+    Optional<Delivery> findByTrackingOrOrderId(@Param("trackingNumber") String trackingNumber);
 }

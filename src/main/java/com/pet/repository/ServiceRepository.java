@@ -5,8 +5,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -18,4 +20,8 @@ public interface ServiceRepository extends JpaRepository<Service, String> {
     // Tìm kiếm theo tên hoặc mô tả
     @Query("SELECT s FROM Service s WHERE :keyword IS NULL OR s.name LIKE %:keyword% OR s.description LIKE %:keyword%")
     Page<Service> searchServices(String keyword, Pageable pageable);
+
+    // AI
+    @Query("SELECT s FROM Service s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR s.description LIKE CONCAT('%', :keyword, '%')")
+    List<Service> searchServicesForChat(@Param("keyword") String keyword);
 }

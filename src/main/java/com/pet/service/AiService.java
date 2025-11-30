@@ -1,4 +1,5 @@
 package com.pet.service;
 
-public class AiService {
+public interface AiService {
+    String chat(String userInput);
 }

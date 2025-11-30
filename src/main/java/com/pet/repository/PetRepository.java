@@ -7,8 +7,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface PetRepository extends JpaRepository<Pet, String>, JpaSpecificationExecutor<Pet> {
@@ -26,4 +28,15 @@ public interface PetRepository extends JpaRepository<Pet, String>, JpaSpecificat
 
     // Đếm thú cưng mới thêm trong khoảng thời gian
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+
+
+    // AI
+    @Query("SELECT p FROM Pet p JOIN p.category c WHERE " +
+            "p.status = 'AVAILABLE' AND " +
+            "(:keyword IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "OR p.description LIKE CONCAT('%', :keyword, '%') " + // Đã sửa dòng này
+            "OR LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
+            "(:maxPrice IS NULL OR p.price <= :maxPrice)")
+    List<Pet> searchForChat(@Param("keyword") String keyword, @Param("maxPrice") Double maxPrice, Pageable pageable);
+
 }
