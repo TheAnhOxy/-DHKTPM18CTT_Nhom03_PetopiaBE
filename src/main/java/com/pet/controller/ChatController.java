@@ -17,7 +17,6 @@ public class ChatController {
 
     @PostMapping
     public ResponseEntity<ApiResponse> chat(@RequestBody Map<String, String> payload) {
-        // Lấy câu hỏi từ JSON body: { "message": "Mèo bị rụng lông thì sao?" }
         String message = payload.get("message");
 
         if (message == null || message.trim().isEmpty()) {

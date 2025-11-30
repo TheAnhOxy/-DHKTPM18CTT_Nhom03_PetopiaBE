@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface ArticleRepository extends JpaRepository<Article, String> {
 //    @Query("SELECT a FROM Article a " +
 //            "WHERE LOWER(a.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-//            "   OR a.content LIKE CONCAT('%', :keyword, '%') " + // ✅ bỏ LOWER ở đây
+//            "   OR a.content LIKE CONCAT('%', :keyword, '%') " +
 //            "   OR LOWER(a.author.username) LIKE LOWER(CONCAT('%', :keyword, '%'))")
 //    Page<Article> searchArticles(@Param("keyword") String keyword, Pageable pageable);
 //

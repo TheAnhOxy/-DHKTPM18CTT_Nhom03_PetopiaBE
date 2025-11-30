@@ -23,33 +23,25 @@ public class AiServiceImpl implements AiService {
 
     @Value("${spring.ai.openai.api-key}")
     private String apiKey;
-
-    // Inject tất cả Repository cần thiết để AI "biết tuốt"
     private final PetRepository petRepository;
     private final ServiceRepository serviceRepository;
     private final ArticleRepository articleRepository;
     private final VoucherRepository voucherRepository;
     private final DeliveryRepository deliveryRepository;
 
-    private static final String MODEL_NAME = "gemini-2.5-flash"; // Hoặc gemini-1.5-flash
+    private static final String MODEL_NAME = "gemini-2.5-flash";
     private final RestClient restClient = RestClient.create();
     private final Gson gson = new Gson();
 
     @Override
     public String chat(String userInput) {
-        // BƯỚC 1: PHÂN TÍCH Ý ĐỊNH (INTENT CLASSIFICATION)
         AiIntentDTO intent = analyzeIntent(userInput);
-
         if (intent == null) return "Hệ thống AI đang bận, vui lòng thử lại sau.";
-
-        // BƯỚC 2: TRUY XUẤT DỮ LIỆU (RAG)
         String databaseContext = retrieveData(intent);
-
-        // BƯỚC 3: TỔNG HỢP CÂU TRẢ LỜI
         return generateFinalResponse(userInput, databaseContext, intent.getIntent());
     }
 
-    // --- HÀM 1: Dùng AI để phân tích xem khách muốn gì ---
+    //  Dùng AI để phân tích xem khách muốn gì ---
     private AiIntentDTO analyzeIntent(String userInput) {
         String prompt = """
             Bạn là bộ não phân tích của hệ thống Petopia. Hãy đọc câu hỏi và trích xuất thông tin ra JSON.
@@ -79,7 +71,7 @@ public class AiServiceImpl implements AiService {
         return parseJson(jsonRaw);
     }
 
-    // --- HÀM 2: Lấy dữ liệu từ DB dựa trên Intent ---
+    //  Lấy dữ liệu từ DB dựa trên Intent ---
     private String retrieveData(AiIntentDTO intent) {
         StringBuilder data = new StringBuilder();
 
@@ -143,7 +135,7 @@ public class AiServiceImpl implements AiService {
         return data.toString();
     }
 
-    // --- HÀM 3: Sinh câu trả lời cuối cùng ---
+    // Sinh câu trả lời cuối cùng ---
     private String generateFinalResponse(String userQuestion, String databaseInfo, String intentType) {
         String systemPrompt = """
             Bạn là trợ lý ảo AI của hệ thống Petopia (Shop thú cưng, spa & kiến thức).
