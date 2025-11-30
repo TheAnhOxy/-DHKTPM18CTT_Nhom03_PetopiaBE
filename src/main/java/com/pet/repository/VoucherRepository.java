@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -28,4 +29,8 @@ public interface VoucherRepository extends JpaRepository<Voucher, String> {
             @Param("discountType") VoucherDiscountType discountType,
             Pageable pageable
     );
+
+    // AI
+    @Query("SELECT v FROM Voucher v WHERE v.status = 'ACTIVE' AND v.startDate <= CURRENT_DATE AND v.endDate >= CURRENT_DATE AND v.usedCount < v.maxUsage")
+    List<Voucher> findAvailableVouchersForChat();
 }
