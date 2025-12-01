@@ -34,7 +34,24 @@ public class OrderConverter {
         dto.setNote(order.getNote());
         dto.setCreatedAt(order.getCreatedAt());
 
-        dto.setDiscountAmount(order.getDiscountAmount());
+        // Tính tổng giảm giá từ voucher & khuyến mãi
+        double voucherDiscount = 0.0;
+        if (order.getOrderVouchers() != null) {
+            voucherDiscount = order.getOrderVouchers().stream()
+                    .map(ov -> ov.getDiscountApplied() != null ? ov.getDiscountApplied() : 0.0)
+                    .reduce(0.0, Double::sum);
+        }
+
+        double promotionDiscount = 0.0;
+        if (order.getOrderPromotions() != null) {
+            promotionDiscount = order.getOrderPromotions().stream()
+                    .map(op -> op.getDiscountApplied() != null ? op.getDiscountApplied() : 0.0)
+                    .reduce(0.0, Double::sum);
+        }
+
+        dto.setVoucherDiscountAmount(voucherDiscount);
+        dto.setPromotionDiscountAmount(promotionDiscount);
+        dto.setDiscountAmount(voucherDiscount + promotionDiscount);
         // Map Address thành chuỗi
         if (order.getAddress() != null) {
             Address addr = order.getAddress();
