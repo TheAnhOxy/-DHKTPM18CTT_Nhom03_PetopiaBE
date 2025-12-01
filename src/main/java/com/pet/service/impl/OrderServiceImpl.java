@@ -583,23 +583,23 @@ public class OrderServiceImpl implements OrderService {
                     </div>
 
                     <!-- Payment Summary -->
-                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 20px; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">
+                    <div style="background-color: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 25px;">
+                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 16px; border-bottom: 2px solid #27ae60; padding-bottom: 8px;">
                             Tổng kết thanh toán
                         </h2>
                         <table style="width: 100%%; border-collapse: collapse;">
                             <tr>
-                                <td style="padding: 10px 0; color: #555; width: 60%%;">Tạm tính:</td>
-                                <td style="padding: 10px 0; text-align: right; color: #2c3e50; width: 40%%; word-wrap: break-word;">%,.0f VNĐ</td>
+                                <td style="padding: 6px 0; color: #555; width: 60%%; font-size: 12px;">Tạm tính:</td>
+                                <td style="padding: 6px 0; text-align: right; color: #2c3e50; width: 40%%; font-size: 12px; word-wrap: break-word; word-break: break-word;">%,.0f VNĐ</td>
                             </tr>
                             <tr>
-                                <td style="padding: 10px 0; color: #555;">Phí vận chuyển:</td>
-                                <td style="padding: 10px 0; text-align: right; color: #2c3e50; word-wrap: break-word;">%,.0f VNĐ</td>
+                                <td style="padding: 6px 0; color: #555; font-size: 12px;">Phí vận chuyển:</td>
+                                <td style="padding: 6px 0; text-align: right; color: #2c3e50; font-size: 12px; word-wrap: break-word; word-break: break-word;">%,.0f VNĐ</td>
                             </tr>
                             %s
-                            <tr style="border-top: 2px solid #27ae60; margin-top: 10px;">
-                                <td style="padding: 15px 0; font-size: 18px; color: #2c3e50;"><strong>Tổng thanh toán:</strong></td>
-                                <td style="padding: 15px 0; text-align: right; font-size: 20px; color: #27ae60; font-weight: bold; word-wrap: break-word;">%,.0f VNĐ</td>
+                            <tr style="border-top: 2px solid #27ae60; margin-top: 8px;">
+                                <td style="padding: 10px 0; font-size: 14px; color: #2c3e50;"><strong>Tổng thanh toán:</strong></td>
+                                <td style="padding: 10px 0; text-align: right; font-size: 16px; color: #27ae60; font-weight: bold; word-wrap: break-word; word-break: break-word;">%,.0f VNĐ</td>
                             </tr>
                         </table>
                     </div>
@@ -669,7 +669,7 @@ public class OrderServiceImpl implements OrderService {
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #2c3e50;">Cảm ơn bạn đã đặt hàng!</h2>
                 <p>Đơn hàng <strong>%s</strong> đang chờ thanh toán.</p>
-                <p>Tổng tiền: <strong style="font-size: 18px; color: #e74c3c; word-wrap: break-word; display: inline-block; max-width: 100%%;">%,.0f VNĐ</strong></p>
+                <p>Tổng tiền: <strong style="font-size: 14px; color: #e74c3c; word-wrap: break-word; word-break: break-word; display: inline-block; max-width: 100%%;">%,.0f VNĐ</strong></p>
                 
                 <div style="border: 2px dashed #3498db; padding: 15px; text-align: center; margin: 20px 0;">
                     <p>Quét mã QR để thanh toán ngay:</p>
@@ -826,23 +826,23 @@ public class OrderServiceImpl implements OrderService {
                     </div>
 
                     <!-- Payment Summary -->
-                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 20px; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">
+                    <div style="background-color: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 25px;">
+                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 16px; border-bottom: 2px solid #27ae60; padding-bottom: 8px;">
                             Tổng kết thanh toán
                         </h2>
                         <table style="width: 100%%; border-collapse: collapse;">
                             <tr>
-                                <td style="padding: 10px 0; color: #555; width: 60%%;">Tạm tính:</td>
-                                <td style="padding: 10px 0; text-align: right; color: #2c3e50; width: 40%%; word-wrap: break-word;">%,.0f VNĐ</td>
+                                <td style="padding: 6px 0; color: #555; width: 60%%; font-size: 12px;">Tạm tính:</td>
+                                <td style="padding: 6px 0; text-align: right; color: #2c3e50; width: 40%%; font-size: 12px; word-wrap: break-word; word-break: break-word;">%,.0f VNĐ</td>
                             </tr>
                             <tr>
-                                <td style="padding: 10px 0; color: #555;">Phí vận chuyển:</td>
-                                <td style="padding: 10px 0; text-align: right; color: #2c3e50; word-wrap: break-word;">%,.0f VNĐ</td>
+                                <td style="padding: 6px 0; color: #555; font-size: 12px;">Phí vận chuyển:</td>
+                                <td style="padding: 6px 0; text-align: right; color: #2c3e50; font-size: 12px; word-wrap: break-word; word-break: break-word;">%,.0f VNĐ</td>
                             </tr>
                             %s
-                            <tr style="border-top: 2px solid #27ae60; margin-top: 10px;">
-                                <td style="padding: 15px 0; font-size: 18px; color: #2c3e50;"><strong>Tổng thanh toán:</strong></td>
-                                <td style="padding: 15px 0; text-align: right; font-size: 20px; color: #27ae60; font-weight: bold; word-wrap: break-word;">%,.0f VNĐ</td>
+                            <tr style="border-top: 2px solid #27ae60; margin-top: 8px;">
+                                <td style="padding: 10px 0; font-size: 14px; color: #2c3e50;"><strong>Tổng thanh toán:</strong></td>
+                                <td style="padding: 10px 0; text-align: right; font-size: 16px; color: #27ae60; font-weight: bold; word-wrap: break-word; word-break: break-word;">%,.0f VNĐ</td>
                             </tr>
                         </table>
                     </div>
