@@ -22,5 +22,6 @@ public class BookingRequestDTO {
     private String note;
 
     @Min(value = 1, message = "Số lượng tối thiểu là 1")
-    private Integer quantity = 1;
+    private Integer quantity ;
+    private Double priceAtPurchase;
 }

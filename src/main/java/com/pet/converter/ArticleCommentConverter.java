@@ -10,6 +10,7 @@ public class ArticleCommentConverter {
     public ArticleCommentResponseDTO toResponseDTO(ArticleComment comment) {
         return ArticleCommentResponseDTO.builder()
                 .commentId(comment.getCommentId())
+                .articleId(comment.getArticle() != null ? comment.getArticle().getArticleId() : null)
                 .userId(comment.getUser() != null ? comment.getUser().getUserId() : null)
                 .username(comment.getUser() != null ? comment.getUser().getUsername() : null)
                 .content(comment.getContent())
