@@ -42,6 +42,7 @@ public class ArticleController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse> getArticleById(@PathVariable String id) {
         ArticleResponseDTO response = articleService.getArticleById(id);
+        System.out.println("helo");
         return ResponseEntity.ok(ApiResponse.builder()
                 .status(200)
                 .message("Article retrieved successfully")

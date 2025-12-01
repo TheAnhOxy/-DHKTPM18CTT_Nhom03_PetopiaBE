@@ -61,7 +61,7 @@ public class ArticleServiceImpl implements ArticleService {
      */
     @Override
     public ArticleResponseDTO getArticleById(String id) {
-        Article article = articleRepository.findArticleWithComments(id)
+        Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Article not found"));
         return articleConverter.toResponseDTO(article);
     }
@@ -77,6 +77,7 @@ public class ArticleServiceImpl implements ArticleService {
                 .map(articleConverter::toResponseDTO)
                 .collect(Collectors.toList());
     }
+
 
     /**
      * ✅ Chỉ ADMIN mới được cập nhật bài viết.
