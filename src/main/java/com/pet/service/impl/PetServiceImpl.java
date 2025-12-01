@@ -91,9 +91,9 @@ public class PetServiceImpl implements PetService {
 
         Sort sort;
         if ("asc".equalsIgnoreCase(request.getSortDirection())) {
-            sort = Sort.by(Sort.Direction.ASC, getSortField(request.getSortBy()));
+            sort = buildSort(request.getSortBy(), Sort.Direction.ASC);
         } else {
-            sort = Sort.by(Sort.Direction.DESC, getSortField(request.getSortBy()));
+            sort = buildSort(request.getSortBy(), Sort.Direction.DESC);
         }
 
         Pageable pageable = PageRequest.of(request.getPage(), request.getPageSize(), sort);
@@ -317,13 +317,20 @@ public class PetServiceImpl implements PetService {
         return petConverter.toPageResponseFromList(dtoList, petPage.getNumber(), petPage.getSize(), petPage.getTotalElements());
     }
 
-    private String getSortField(String sortBy) {
-        if (sortBy == null) return "createdAt";
-        return switch (sortBy) {
+    private Sort buildSort(String sortBy, Sort.Direction direction) {
+        if (sortBy == null) return Sort.by(direction, "createdAt");
+
+        // sort theo giá hiển thị (ưu tiên discountPrice, fallback price)
+        if ("finalPrice".equalsIgnoreCase(sortBy)) {
+            return Sort.by(direction, "discountPrice").and(Sort.by(direction, "price"));
+        }
+
+        String field = switch (sortBy) {
             case "name" -> "name";
             case "price" -> "price";
             case "rating" -> "rating";
             default -> "createdAt";
         };
+        return Sort.by(direction, field);
     }
 }
