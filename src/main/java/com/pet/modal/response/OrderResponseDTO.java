@@ -30,7 +30,12 @@ public class OrderResponseDTO {
     private String paymentUrl; // Link ảnh QR Code
     private String transactionId;
 
+    // Tổng giảm giá (voucher + khuyến mãi)
     private Double discountAmount;
+    // Giảm giá từ voucher
+    private Double voucherDiscountAmount;
+    // Giảm giá từ khuyến mãi
+    private Double promotionDiscountAmount;
     // Items
     private List<OrderItemResponseDTO> orderItems;
 }

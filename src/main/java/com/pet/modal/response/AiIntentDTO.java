@@ -1,4 +1,4 @@
-package com.pet.modal.dto;
+package com.pet.modal.response;
 
 import lombok.Data;
 

@@ -37,4 +37,7 @@ public class OrderCreateRequestDTO {
 
     //BỔ SUNG: Danh sách ID Voucher người dùng chọn
     private List<String> voucherIds;
+
+    // Mã khuyến mãi (promotion code) mà FE đang áp dụng cho đơn
+    private String promotionCode;
 }
