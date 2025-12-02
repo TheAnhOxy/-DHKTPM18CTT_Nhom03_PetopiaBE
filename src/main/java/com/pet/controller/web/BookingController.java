@@ -13,7 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/bookings")
+@RequestMapping("/api/bookings")
 public class BookingController {
 
     @Autowired
@@ -24,13 +24,23 @@ public class BookingController {
     public ResponseEntity<ApiResponse> createBooking(
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody BookingRequestDTO request) {
+        try{
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-                ApiResponse.builder()
-                        .status(201)
-                        .message("Đặt lịch thành công")
-                        .data(serviceManagement.createBooking(currentUser.getUserId(), request))
-                        .build());
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                    ApiResponse.builder()
+                            .status(201)
+                            .message("Đặt lịch thành công")
+                            .data(serviceManagement.createBooking(currentUser.getUserId(), request))
+                            .build());
+        }catch (Exception e){
+            e.printStackTrace(
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    ApiResponse.builder()
+                            .status(400)
+                            .message(e.getMessage())
+                            .build());
+        }
     }
 
     //  User xem lịch sử đặt của mình
