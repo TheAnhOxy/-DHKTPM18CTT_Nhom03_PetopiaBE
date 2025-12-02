@@ -1,9 +1,11 @@
 package com.pet.service;
 
+import com.pet.modal.request.ContactRequestDTO;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -16,6 +18,8 @@ public class EmailService {
 
     @Autowired
     private JavaMailSender mailSender ;
+    @Value("${app.admin.email:theanh199405023@gmail.com}")
+    private String adminEmail;
 
     @Async
     public void sendVaccineNotification(String toEmail, String userName, String vaccineName,
@@ -50,6 +54,61 @@ public class EmailService {
         } catch (Exception e) {
             log.error("Gửi email thất bại: {}", e.getMessage());
         }
+    }
+    @Async
+    public void sendEmailContact(String toEmail, String subject, String htmlContent, String replyTo) {
+        try {
+            log.info("Đang gửi email tới: {}", toEmail);
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+
+            helper.setFrom(adminEmail);
+
+            helper.setReplyTo(replyTo);
+
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Gửi email thành công!");
+
+        } catch (Exception e) {
+            log.error("Gửi email thất bại: {}", e.getMessage());
+        }
+    }
+
+
+    public void sendContactNotification(ContactRequestDTO request) {
+        // Tiêu đề: Gửi cho Admin
+        String emailSubject = "[Petopia - Liên Hệ Mới] " + request.getSubject();
+
+        // Nội dung: Thông tin khách hàng
+        String htmlContent = String.format("""
+            <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #8B4513;">📬 Có liên hệ mới từ khách hàng</h2>
+                <hr style="border: 0; border-top: 1px solid #eee;" />
+                <p><strong>Họ tên:</strong> %s</p>
+                <p><strong>Email khách:</strong> <a href="mailto:%s">%s</a></p>
+                <p><strong>Số điện thoại:</strong> %s</p>
+                <p><strong>Địa chỉ:</strong> %s</p>
+                <h3>Nội dung tin nhắn:</h3>
+                <p style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #8B4513; border-radius: 4px;">
+                    %s
+                </p>
+                <br/>
+                <p style="font-size: 12px; color: #888;">Email này được gửi tự động từ hệ thống Petopia.</p>
+            </div>
+            """,
+                request.getName(),
+                request.getEmail(), request.getEmail(),
+                request.getPhone(),
+                request.getAddress() != null ? request.getAddress() : "Không cung cấp",
+                request.getMessage().replace("\n", "<br/>")
+        );
+
+        this.sendEmailContact(adminEmail, emailSubject, htmlContent,request.getEmail());
     }
 
     @Async
