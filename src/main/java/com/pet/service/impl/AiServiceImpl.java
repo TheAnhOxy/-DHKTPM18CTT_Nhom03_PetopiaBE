@@ -2,7 +2,7 @@ package com.pet.service.impl;
 
 import com.google.gson.Gson;
 import com.pet.entity.*;
-import com.pet.modal.dto.AiIntentDTO;
+import com.pet.modal.response.AiIntentDTO;
 import com.pet.repository.*;
 import com.pet.service.AiService;
 import lombok.RequiredArgsConstructor;

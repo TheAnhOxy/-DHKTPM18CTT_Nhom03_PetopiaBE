@@ -258,9 +258,25 @@ public class OrderServiceImpl implements OrderService {
             order.setOrderVouchers(orderVouchers);
         }
 
-        //  Promotion (Tự động áp dụng) - TẠM THỜI TẮT, CHỈ ÁP DỤNG VOUCHER THEO YÊU CẦU
-        //  Nếu sau này muốn bật lại auto promotion, có thể bật đoạn code cũ hoặc
-        //  bọc logic dưới vào một điều kiện cấu hình.
+        //  Promotion (Theo mã khuyến mãi FE gửi lên)
+        if (request.getPromotionCode() != null && !request.getPromotionCode().isBlank()) {
+            Promotion promotion = promotionRepository.findByCode(request.getPromotionCode()).orElse(null);
+            if (promotion != null && isValidPromotion(promotion, itemsTotal)) {
+                double promoDiscount = calculatePromotionDiscount(promotion, itemsTotal);
+                totalDiscount += promoDiscount;
+
+                OrderPromotion op = new OrderPromotion();
+                op.setOrderPromotionId(generateOrderPromotionId());
+                op.setOrder(order);
+                op.setPromotion(promotion);
+                op.setDiscountApplied(promoDiscount);
+                orderPromotions.add(op);
+
+                // tăng lượt dùng
+                promotion.setUsedCount((promotion.getUsedCount() != null ? promotion.getUsedCount() : 0) + 1);
+                promotionRepository.save(promotion);
+            }
+        }
         order.setOrderPromotions(orderPromotions);
 
 
@@ -295,6 +311,14 @@ public class OrderServiceImpl implements OrderService {
         return true;
     }
 
+    private boolean isValidPromotion(Promotion p, double orderTotal) {
+        if (p.getStatus() != PromotionVoucherStatus.ACTIVE) return false;
+        if (p.getStartDate().isAfter(LocalDate.now()) || p.getEndDate().isBefore(LocalDate.now())) return false;
+        if (p.getMinOrderAmount() != null && orderTotal < p.getMinOrderAmount()) return false;
+        if (p.getMaxUsage() != null && p.getUsedCount() != null && p.getUsedCount() >= p.getMaxUsage()) return false;
+        return true;
+    }
+
     private double calculateDiscount(VoucherDiscountType type, Double value, double orderTotal) {
         if (type == VoucherDiscountType.PERCENTAGE) {
             // Ví dụ: Giảm 10% của 1.000.000 = 100.000
@@ -303,6 +327,15 @@ public class OrderServiceImpl implements OrderService {
             // Giảm tiền mặt: 50.000
             return value;
         }
+    }
+
+    private double calculatePromotionDiscount(Promotion promo, double orderTotal) {
+        if (promo.getPromotionType() == PromotionType.DISCOUNT && promo.getDiscountValue() != null && promo.getDiscountValue() <= 100) {
+            // Giảm theo %
+            return orderTotal * (promo.getDiscountValue() / 100.0);
+        }
+        // Các loại khác (FREESHIP, CASHBACK, BUNDLE hoặc DISCOUNT > 100): giảm cố định
+        return promo.getDiscountValue() != null ? promo.getDiscountValue() : 0.0;
     }
 
     private String generateOrderPromotionId() {
@@ -402,17 +435,33 @@ public class OrderServiceImpl implements OrderService {
         LocalDateTime createdTime = payment.getCreatedAt();
         LocalDateTime now = LocalDateTime.now();
 
-        // Nếu quá 10 phút -> Đánh dấu FAILED và không update đơn hàng
+        // Nếu quá 10 phút -> Đánh dấu FAILED cho payment và order, không update trạng thái thành công
         if (createdTime.plusMinutes(10).isBefore(now)) {
             payment.setPaymentStatus(PaymentStatus.FAILED);
             paymentRepository.save(payment);
-            throw new RuntimeException("Giao dịch quá hạn 10 phút. Vui lòng liên hệ Admin.");
+
+            Order timeoutOrder = payment.getOrder();
+            if (timeoutOrder != null) {
+                timeoutOrder.setPaymentStatus(OrderPaymentStatus.FAILED);
+                orderRepository.save(timeoutOrder);
+            }
+            // Không throw exception để tránh rollback transaction
+            return;
         }
 
         //  Kiểm tra số tiền (Phải chuyển đủ hoặc dư)
         if (webhookData.getTransferAmount() < payment.getAmount()) {
-            // Có thể xử lý logic chuyển thiếu tiền ở đây
-            throw new RuntimeException("Số tiền chuyển không đủ");
+            // Chuyển thiếu tiền: Đánh dấu giao dịch FAILED, set paymentStatus của đơn là FAILED
+            payment.setPaymentStatus(PaymentStatus.FAILED);
+            paymentRepository.save(payment);
+
+            Order underPaidOrder = payment.getOrder();
+            if (underPaidOrder != null) {
+                underPaidOrder.setPaymentStatus(OrderPaymentStatus.FAILED);
+                orderRepository.save(underPaidOrder);
+            }
+            // Không throw exception để tránh rollback transaction
+            return;
         }
 
         //UPDATE TRẠNG THÁI THÀNH CÔNG
@@ -583,23 +632,23 @@ public class OrderServiceImpl implements OrderService {
                     </div>
 
                     <!-- Payment Summary -->
-                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 20px; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">
+                    <div style="background-color: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 25px;">
+                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 16px; border-bottom: 2px solid #27ae60; padding-bottom: 8px;">
                             Tổng kết thanh toán
                         </h2>
                         <table style="width: 100%%; border-collapse: collapse;">
                             <tr>
-                                <td style="padding: 10px 0; color: #555; width: 60%%;">Tạm tính:</td>
-                                <td style="padding: 10px 0; text-align: right; color: #2c3e50; width: 40%%; word-wrap: break-word;">%,.0f VNĐ</td>
+                                <td style="padding: 6px 0; color: #555; width: 60%%; font-size: 12px;">Tạm tính:</td>
+                                <td style="padding: 6px 0; text-align: right; color: #2c3e50; width: 40%%; font-size: 12px; word-wrap: break-word; word-break: break-word;">%,.0f VNĐ</td>
                             </tr>
                             <tr>
-                                <td style="padding: 10px 0; color: #555;">Phí vận chuyển:</td>
-                                <td style="padding: 10px 0; text-align: right; color: #2c3e50; word-wrap: break-word;">%,.0f VNĐ</td>
+                                <td style="padding: 6px 0; color: #555; font-size: 12px;">Phí vận chuyển:</td>
+                                <td style="padding: 6px 0; text-align: right; color: #2c3e50; font-size: 12px; word-wrap: break-word; word-break: break-word;">%,.0f VNĐ</td>
                             </tr>
                             %s
-                            <tr style="border-top: 2px solid #27ae60; margin-top: 10px;">
-                                <td style="padding: 15px 0; font-size: 18px; color: #2c3e50;"><strong>Tổng thanh toán:</strong></td>
-                                <td style="padding: 15px 0; text-align: right; font-size: 20px; color: #27ae60; font-weight: bold; word-wrap: break-word;">%,.0f VNĐ</td>
+                            <tr style="border-top: 2px solid #27ae60; margin-top: 8px;">
+                                <td style="padding: 10px 0; font-size: 14px; color: #2c3e50;"><strong>Tổng thanh toán:</strong></td>
+                                <td style="padding: 10px 0; text-align: right; font-size: 16px; color: #27ae60; font-weight: bold; word-wrap: break-word; word-break: break-word;">%,.0f VNĐ</td>
                             </tr>
                         </table>
                     </div>
@@ -669,7 +718,7 @@ public class OrderServiceImpl implements OrderService {
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #2c3e50;">Cảm ơn bạn đã đặt hàng!</h2>
                 <p>Đơn hàng <strong>%s</strong> đang chờ thanh toán.</p>
-                <p>Tổng tiền: <strong style="font-size: 18px; color: #e74c3c; word-wrap: break-word; display: inline-block; max-width: 100%%;">%,.0f VNĐ</strong></p>
+                <p>Tổng tiền: <strong style="font-size: 14px; color: #e74c3c; word-wrap: break-word; word-break: break-word; display: inline-block; max-width: 100%%;">%,.0f VNĐ</strong></p>
                 
                 <div style="border: 2px dashed #3498db; padding: 15px; text-align: center; margin: 20px 0;">
                     <p>Quét mã QR để thanh toán ngay:</p>
@@ -826,23 +875,23 @@ public class OrderServiceImpl implements OrderService {
                     </div>
 
                     <!-- Payment Summary -->
-                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
-                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 20px; border-bottom: 2px solid #27ae60; padding-bottom: 10px;">
+                    <div style="background-color: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 25px;">
+                        <h2 style="color: #2c3e50; margin-top: 0; font-size: 16px; border-bottom: 2px solid #27ae60; padding-bottom: 8px;">
                             Tổng kết thanh toán
                         </h2>
                         <table style="width: 100%%; border-collapse: collapse;">
                             <tr>
-                                <td style="padding: 10px 0; color: #555; width: 60%%;">Tạm tính:</td>
-                                <td style="padding: 10px 0; text-align: right; color: #2c3e50; width: 40%%; word-wrap: break-word;">%,.0f VNĐ</td>
+                                <td style="padding: 6px 0; color: #555; width: 60%%; font-size: 12px;">Tạm tính:</td>
+                                <td style="padding: 6px 0; text-align: right; color: #2c3e50; width: 40%%; font-size: 12px; word-wrap: break-word; word-break: break-word;">%,.0f VNĐ</td>
                             </tr>
                             <tr>
-                                <td style="padding: 10px 0; color: #555;">Phí vận chuyển:</td>
-                                <td style="padding: 10px 0; text-align: right; color: #2c3e50; word-wrap: break-word;">%,.0f VNĐ</td>
+                                <td style="padding: 6px 0; color: #555; font-size: 12px;">Phí vận chuyển:</td>
+                                <td style="padding: 6px 0; text-align: right; color: #2c3e50; font-size: 12px; word-wrap: break-word; word-break: break-word;">%,.0f VNĐ</td>
                             </tr>
                             %s
-                            <tr style="border-top: 2px solid #27ae60; margin-top: 10px;">
-                                <td style="padding: 15px 0; font-size: 18px; color: #2c3e50;"><strong>Tổng thanh toán:</strong></td>
-                                <td style="padding: 15px 0; text-align: right; font-size: 20px; color: #27ae60; font-weight: bold; word-wrap: break-word;">%,.0f VNĐ</td>
+                            <tr style="border-top: 2px solid #27ae60; margin-top: 8px;">
+                                <td style="padding: 10px 0; font-size: 14px; color: #2c3e50;"><strong>Tổng thanh toán:</strong></td>
+                                <td style="padding: 10px 0; text-align: right; font-size: 16px; color: #27ae60; font-weight: bold; word-wrap: break-word; word-break: break-word;">%,.0f VNĐ</td>
                             </tr>
                         </table>
                     </div>

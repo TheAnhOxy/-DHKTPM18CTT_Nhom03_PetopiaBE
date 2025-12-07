@@ -41,7 +41,7 @@ public class ServiceServiceImpl implements ServiceManagement {
     @Autowired private ObjectMapper objectMapper;
 
     @Override
-    @Cacheable(value = "services_list", key = "#keyword + '-' + #page + '-' + #size") // Cache theo cả keyword
+//    @Cacheable(value = "services_list", key = "#keyword + '-' + #page + '-' + #size") // Cache theo cả keyword
     public PageResponse<ServiceResponseDTO> getAllServices(String keyword, int page, int size) {
         // Gọi hàm search mới
         Page<com.pet.entity.Service> services = serviceRepository.searchServices(keyword, PageRequest.of(page, size));

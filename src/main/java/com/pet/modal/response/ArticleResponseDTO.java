@@ -1,5 +1,6 @@
 package com.pet.modal.response;
 
+import com.pet.entity.ArticleComment;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
