@@ -5,13 +5,18 @@ import com.pet.entity.Address;
 import com.pet.entity.User;
 import com.pet.enums.UserRole;
 import com.pet.exception.ResourceNotFoundException;
-import com.pet.modal.request.*;
-import com.pet.modal.response.*;
+import com.pet.modal.request.AddressRequestDTO;
+import com.pet.modal.request.ChangePasswordRequestDTO;
+import com.pet.modal.request.UserSaveRequestDTO;
+import com.pet.modal.request.UserUpdateRequestDTO;
+import com.pet.modal.response.AddressResponseDTO;
+import com.pet.modal.response.PageResponse;
+import com.pet.modal.response.UserResponseDTO;
 import com.pet.repository.AddressRepository;
 import com.pet.repository.UserRepository;
+import com.pet.service.CloudinaryService;
 import com.pet.service.IUserService;
 import com.pet.utils.StringUtil;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -22,7 +27,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -40,7 +47,8 @@ public class UserServiceImpl implements IUserService {
     private  UserConverter userConverter;
     @Autowired
     private  PasswordEncoder passwordEncoder;
-
+    @Autowired
+    private CloudinaryService cloudinaryService;
     @Override
     public UserResponseDTO getUserProfile(String userId) {
         User user = getUserById(userId);
@@ -49,13 +57,19 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     @Transactional
-    public UserResponseDTO updateUserProfile(String userId, UserUpdateRequestDTO request) {
-        User user = getUserById(userId);
-
+    public UserResponseDTO updateUserProfile(String userId, UserUpdateRequestDTO request, MultipartFile avatarFile) throws IOException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        System.out.println("Updating user profile for userId: " + userId   + ", with request: " + request.toString() +      ", avatarFile: " + (avatarFile ));
         if (request.getFullName() != null) user.setFullName(request.getFullName());
-        if (request.getAvatar() != null) user.setAvatar(request.getAvatar());
         if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
-        if (request.getEmail() != null) user.setEmail(request.getEmail());
+
+        if (avatarFile != null && !avatarFile.isEmpty()) {
+            String avatarUrl = cloudinaryService.uploadImage(avatarFile);
+            user.setAvatar(avatarUrl);
+        } else if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
+            user.setAvatar(request.getAvatar());
+        }
 
         return userConverter.toUserResponseDTO(userRepository.save(user));
     }
@@ -309,5 +323,21 @@ public class UserServiceImpl implements IUserService {
         } catch (NumberFormatException e) {
             return "U" + System.currentTimeMillis();
         }
+    }
+    @Override
+//    change password
+    @Transactional
+    public void changePassword(String userId, ChangePasswordRequestDTO request) {
+        User user = getUserById(userId);
+
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("Mật khẩu cũ không chính xác");
+        }
+        if (StringUtils.isEmpty(request.getNewPassword())) {
+            throw new IllegalArgumentException("Mật khẩu là bắt buộc khi tạo mới");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 }
