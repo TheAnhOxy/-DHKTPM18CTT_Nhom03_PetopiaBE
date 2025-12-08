@@ -446,10 +446,9 @@ INSERT INTO pets (pet_id, name, description, category_id, age, gender, price, di
 ('P008', 'Ragdoll Mềm', 'Mèo Ragdoll hiền lành', 'C010', 9, 'FEMALE', 15000000, 13500000, 'Khỏe mạnh', 'Tiêm phòng FVRCP 2025-06-30', 1, 'AVAILABLE', 'ragdoll_video.mp4', 5, 30, 'Trắng xanh', 'LONG', '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 ('P009', 'Poodle Nhí', 'Poodle nhỏ, lông xoăn mềm', 'C003', 5, 'MALE', 14000000, 11200000, 'Khỏe mạnh', 'Tiêm phòng dại 2025-07-20', 1, 'AVAILABLE', 'poodle2_video.mp4', 3, 28, 'Đen', 'CURLY', '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 ('P010', 'Golden Bé', 'Golden Retriever con', 'C004', 3, 'MALE', 22000000, 19800000, 'Khỏe mạnh', 'Tiêm phòng tổng hợp 2025-07-25', 1, 'AVAILABLE', 'golden2_video.mp4', 15, 40, 'Vàng', 'LONG', '2025-08-11 14:26:00', '2025-08-11 14:26:00');
-
 -- Dữ liệu mẫu cho bảng pet_images
  INSERT INTO pet_images (image_id, pet_id, image_url, is_thumbnail, created_at) VALUES
-('PI001', 'P001', 'https://drive.google.com/uc?id=10QUaQZiCkIHZtOpKxPK5pZVFwQc-dLBD', 1, '2025-08-11 14:26:00'),
+('PI001', 'P001', 'https://drive.google.com/uc?id=1rylFPx_LMHnpYN6FI4geboGD48ca0huZ', 1, '2025-08-11 14:26:00'),
 ('PI002', 'P001', 'https://drive.google.com/uc?id=1O_CEe07IyiP6VkBAhjuEXs8sPL4b-_qr', 0, '2025-08-11 14:26:00'),
 ('PI003', 'P002', 'https://drive.google.com/uc?id=1Khgjo75U2Ktnpr4btrwLeABZrVwodlBB', 1, '2025-08-11 14:26:00'),
 ('PI004', 'P002', 'https://drive.google.com/uc?id=1y2STjjGLihMz9XPW7ZheaQfkGlD377U5', 0, '2025-08-11 14:26:00'),
@@ -464,43 +463,41 @@ INSERT INTO pets (pet_id, name, description, category_id, age, gender, price, di
 
 INSERT INTO services (service_id, name, description, price, image_url, created_at, updated_at) VALUES
 ('S001', 'Tắm thú cưng', 'Dịch vụ tắm và làm sạch lông', 150000,
- 'https://images.pexels.com/photos/4588033/pexels-photo-4588033.jpeg',
+ 'https://drive.google.com/uc?id=1WzxcsmvDmqk_YIYpEd3kcCstLc713aqH',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
-
 ('S002', 'Cắt tỉa lông', 'Cắt tỉa lông thẩm mỹ', 200000,
- 'https://images.pexels.com/photos/731022/pexels-photo-731022.jpeg',
+ 'https://drive.google.com/uc?id=1uSVjbbXH2tFiL36oKtGJZXYkRQu8csiA',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
-
 ('S003', 'Huấn luyện cơ bản', 'Huấn luyện vâng lời cơ bản', 500000,
- 'https://www.thesprucepets.com/thmb/p1h-A-P3AbKz-t-2-I2pQOJj-wM=/2121x0/filters:no_upscale():max_bytes(150000):str_icc()/golden-retriever-puppy-in-training-class.jpg',
+ 'https://drive.google.com/uc?id=1jk1Nn65TofLjQmYxoNc39nVyMw2yFZ_-',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('S004', 'Spa thư giãn', 'Massage và chăm sóc thư giãn', 300000,
- 'https://i.natgeofe.com/n/e9f60a57-b051-4f81-99e5-91d848722c1b/00000163-952a-d8c3-a37f-9f7fd8620000_3x2.jpg',
+ 'https://drive.google.com/uc?id=1pXC0xOVQR2jUDKOIlpZjG_jAIDGDRzfj',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('S005', 'Kiểm tra sức khỏe', 'Khám sức khỏe định kỳ', 250000,
- 'https://www.hepper.com/wp-content/uploads/2021/11/shutterstock_1130384819.jpg',
+ 'https://drive.google.com/uc?id=1GQjvZ7Y0oVUbC-d3pmgalkI1TK1PgDVZ',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('S006', 'Tiêm phòng dại', 'Tiêm vắc-xin phòng dại', 100000,
- 'https://www.allfelinehospital.com/sites/default/files/styles/large/public/cat-vaccinations-all-feline-hospital.jpg',
+ 'https://drive.google.com/uc?id=1SxIrS-n_iNW_W4DcvjvMrvV0yx9xVu2G',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('S007', 'Tẩy giun', 'Tẩy giun định kỳ', 80000,
- 'https://media.post.rvohealth.io/wp-content/uploads/2021/08/dog-getting-a-pill-732x549-thumbnail-732x549.jpg',
+ 'https://drive.google.com/uc?id=1pmeDLD6JOrKdJ75fq-a3BmEGT5rgGu9f',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('S008', 'Cắt móng', 'Cắt móng chân cho thú cưng', 50000,
- 'https://www.preventivevet.com/hs-fs/hubfs/dog-nail-trims-how-to-trim-a-dogs-nails.jpg',
+ 'https://drive.google.com/uc?id=1oL5ZBBTOyf1DtUKVaRCBYokD1t5l0R8r',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('S009', 'Huấn luyện nâng cao', 'Huấn luyện kỹ năng đặc biệt', 800000,
- 'https://www.k9ofmine.com/wp-content/uploads/2017/12/advanced-dog-tricks.jpg',
+ 'https://drive.google.com/uc?id=1EjfO3Abi5TDwhCTE-TKG8ISz8sguQdD-',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('S010', 'Chăm sóc lông chuyên sâu', 'Chăm sóc lông cho thú cưng lông dài', 350000,
- 'https://www.hepper.com/wp-content/uploads/2021/11/ragdoll-cat-being-brushed_New-Africa_Shutterstock.jpg',
+ 'https://drive.google.com/uc?id=11d43hygT0gD4GJsjAb07gcQSXMESdGNR',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00');
 
 -- Dữ liệu mẫu cho bảng wishlists
@@ -694,42 +691,42 @@ INSERT INTO reviews (review_id, pet_id, user_id, rating, comment, reply, reply_d
 -- Dữ liệu mẫu cho bảng articles
 INSERT INTO articles (article_id, title, content, author_id, image_url, created_at, updated_at) VALUES
 ('AR001', 'Cách chăm sóc Poodle đúng cách', 'Nội dung bài viết về chăm sóc Poodle...', 'U003',
- 'https://images.pexels.com/photos/59523/pexels-photo-59523.jpeg', '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
+ 'https://drive.google.com/uc?id=1cMZvTH6kg_F-2r_nzpH8HiKqFbkgOBVd', '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('AR002', 'Huấn luyện Golden Retriever', 'Nội dung bài viết về huấn luyện Golden...', 'U003',
- 'https://www.thesprucepets.com/thmb/p1h-A-P3AbKz-t-2-I2pQOJj-wM=/2121x0/filters:no_upscale():max_bytes(150000):str_icc()/golden-retriever-puppy-in-training-class.jpg',
+ 'https://drive.google.com/uc?id=1teoyjFIjeHrWINYnYmE4HANsmGx_suYN',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('AR003', 'Chăm sóc mèo Ba Tư', 'Nội dung bài viết về chăm sóc mèo Ba Tư...', 'U003',
- 'https://www.thesprucepets.com/thmb/y4Y2K8Gmv2_2MOdYI6nK7t2Yg4A=/2121x0/filters:no_upscale():max_bytes(150000):str_icc()/GettyImages-1319794353.jpg',
+ 'https://drive.google.com/uc?id=1hKdImkuclV3UHUqx8Yggfrbv0Jkjx0z4',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('AR004', 'Lợi ích của việc tắm thú cưng', 'Nội dung bài viết về tắm thú cưng...', 'U003',
- 'https://images.pexels.com/photos/4588033/pexels-photo-4588033.jpeg',
+ 'https://drive.google.com/uc?id=1b6SLMCkbWkt2-IiKY-VB8vexpq2QpZim',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('AR005', 'Husky và những điều cần biết', 'Nội dung bài viết về Husky...', 'U003',
- 'https://images.pexels.com/photos/1619690/pexels-photo-1619690.jpeg',
+ 'https://drive.google.com/uc?id=17Nf9NipOdMNyqF9HaA7P9RRmu34phJuq',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('AR006', 'Mèo Xiêm và tính cách đặc biệt', 'Nội dung bài viết về mèo Xiêm...', 'U003',
- 'https://www.thesprucepets.com/thmb/9qN35-Vz222o3iP4_m5qD2Q_E-w=/2119x0/filters:no_upscale():max_bytes(150000):str_icc()/siamese-cat.jpg',
+ 'https://drive.google.com/uc?id=1-48C-BjZDTkV-eyYXFlTgQ8VKMrxNx2Y',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('AR007', 'Chăm sóc lông cho mèo Ragdoll', 'Nội dung bài viết về chăm sóc Ragdoll...', 'U003',
- 'https://www.hepper.com/wp-content/uploads/2021/11/ragdoll-cat-being-brushed_New-Africa_Shutterstock.jpg',
+ 'https://drive.google.com/uc?id=1aQafm0oFJUGn2MFFy06YyKUPwKC15Z6G',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('AR008', 'Chihuahua và chế độ ăn', 'Nội dung bài viết về chế độ ăn cho Chihuahua...', 'U003',
- 'https://images.pexels.com/photos/39317/chihuahua-dog-puppy-cute-39317.jpeg',
+ 'https://drive.google.com/uc?id=1M9QzAKxLXurvSdOJj1kLxfrCnA1XFIJ6',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('AR009', 'Cách chọn thú cưng phù hợp', 'Nội dung bài viết về chọn thú cưng...', 'U003',
- 'https://www.gannett-cdn.com/presto/2021/08/25/USAT/137a8264-a551-4f10-9118-87364ea745f4-vehab_adopt_a_pet_02.JPG',
+ 'https://drive.google.com/uc?id=1O_CEe07IyiP6VkBAhjuEXs8sPL4b-_qr',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00'),
 
 ('AR010', 'Tầm quan trọng của tiêm phòng', 'Nội dung bài viết về tiêm phòng thú cưng...', 'U003',
- 'https://www.allfelinehospital.com/sites/default/files/styles/large/public/cat-vaccinations-all-feline-hospital.jpg',
+ 'https://drive.google.com/uc?id=1mrhmMyytzXsVqfvmcbkSyR0cSxnZB3DU',
  '2025-08-11 14:26:00', '2025-08-11 14:26:00');
 
 -- Dữ liệu mẫu cho bảng article_comments
