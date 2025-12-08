@@ -3,6 +3,7 @@ package com.pet.service;
 import com.pet.entity.User;
 import com.pet.enums.UserRole;
 import com.pet.modal.request.LoginRequestDTO;
+import com.pet.modal.request.RefreshTokenRequest;
 import com.pet.modal.request.RegisterRequestDTO;
 import com.pet.modal.response.LoginResponseDTO;
 import com.pet.repository.UserRepository;
@@ -83,11 +84,39 @@ public class AuthService {
                 .orElseThrow();
 
         var token =  jwtUtils.generateToken(user);
+        String refreshToken = jwtUtils.generateRefreshToken(user);
 
         return LoginResponseDTO.builder()
                 .accessToken(token)
+                .refreshToken(refreshToken) // <--- Đã có dữ liệu
                 .user(user)
                 .build();
+    }
+
+    public LoginResponseDTO refreshToken(RefreshTokenRequest request) {
+        String refreshToken = request.getRefreshToken();
+
+        // 1. Lấy username từ refresh token
+        String username = jwtUtils.extractUsername(refreshToken);
+
+        // 2. Tìm user trong DB
+        var user = userRepository.findByUsernameOrPhoneNumber(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 3. Kiểm tra tính hợp lệ của Refresh Token
+        if (jwtUtils.isTokenValid(refreshToken, user)) {
+            // 4. Tạo Access Token mới
+            String newAccessToken = jwtUtils.generateToken(user);
+
+            // Trả về token mới (giữ nguyên refresh token cũ hoặc tạo mới tùy logic, ở đây giữ cũ)
+            return LoginResponseDTO.builder()
+                    .accessToken(newAccessToken)
+                    .refreshToken(refreshToken)
+                    .user(user)
+                    .build();
+        } else {
+            throw new RuntimeException("Refresh token không hợp lệ hoặc đã hết hạn");
+        }
     }
 
     public void sendOtp(String email) {
@@ -114,6 +143,8 @@ public class AuthService {
         }
         return storedOtp.equals(otp);
     }
+
+
 
     public void resetPassword(String email, String newPassword) {
         if (!otpStorage.containsKey(email)) {

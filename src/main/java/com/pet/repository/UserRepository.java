@@ -52,4 +52,9 @@ WHERE u.username = :identifier
             @Param("isActive") Boolean isActive,
             Pageable pageable
     );
+
+    @Query("SELECT u FROM User u WHERE u.username = :identifier OR u.phoneNumber = :identifier")
+    Optional<User> findByUsernameOrPhoneNumber(@Param("identifier") String identifier);
+
+
 }

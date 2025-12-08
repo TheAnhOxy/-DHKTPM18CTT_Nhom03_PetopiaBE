@@ -21,8 +21,8 @@ public class AdminPreBookingController {
 
     @GetMapping("/all")
     public ResponseEntity<ApiResponse> getAllPreBookings(
-            @RequestParam(required = false) BookingStatus status, // Lọc theo trạng thái
-            @RequestParam(required = false) String keyword,       // Tìm theo tên Pet/User
+            @RequestParam(required = false) BookingStatus status,
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
