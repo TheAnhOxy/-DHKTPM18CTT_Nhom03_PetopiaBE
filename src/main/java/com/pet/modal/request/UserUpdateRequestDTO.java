@@ -8,4 +8,5 @@ public class UserUpdateRequestDTO {
     private String email;
     private String avatar;
     private String phoneNumber;
+
 }

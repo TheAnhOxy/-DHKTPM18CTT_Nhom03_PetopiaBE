@@ -1,5 +1,7 @@
 package com.pet.service;
 
+import com.pet.modal.response.ChatResponseDTO;
+
 public interface AiService {
-    String chat(String userInput);
+    ChatResponseDTO chat(String userInput);
 }
