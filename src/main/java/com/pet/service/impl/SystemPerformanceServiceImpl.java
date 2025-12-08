@@ -12,6 +12,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -54,7 +55,12 @@ public class SystemPerformanceServiceImpl implements SystemPerformanceService {
 
     @Override
     public List<EndpointPerformanceDTO> getEndpointPerformance() {
-        List<Timer> timers = new ArrayList<>(meterRegistry.get("http.server.requests").timers());
+        Collection<Timer> collectedTimers = meterRegistry.find("http.server.requests").timers();
+        if (collectedTimers.isEmpty()) {
+            return List.of();
+        }
+
+        List<Timer> timers = new ArrayList<>(collectedTimers);
 
         Map<String, EndpointAccumulator> grouped = new HashMap<>();
 
@@ -96,7 +102,7 @@ public class SystemPerformanceServiceImpl implements SystemPerformanceService {
     public List<Map<String, Object>> getRawHttpMetrics() {
         List<Map<String, Object>> results = new ArrayList<>();
 
-        for (Timer timer : meterRegistry.get("http.server.requests").timers()) {
+        for (Timer timer : meterRegistry.find("http.server.requests").timers()) {
             Map<String, Object> entry = new LinkedHashMap<>();
             entry.put("uri", defaultIfBlank(timer.getId().getTag("uri"), "UNKNOWN"));
             entry.put("method", defaultIfBlank(timer.getId().getTag("method"), "UNKNOWN"));
@@ -113,7 +119,7 @@ public class SystemPerformanceServiceImpl implements SystemPerformanceService {
 
 
     private long getCountByStatusRange(int fromInclusive, int toInclusive) {
-        return meterRegistry.get("http.server.requests").timers().stream()
+        return meterRegistry.find("http.server.requests").timers().stream()
                 .filter(timer -> {
                     String status = timer.getId().getTag("status");
                     if (status == null) {
