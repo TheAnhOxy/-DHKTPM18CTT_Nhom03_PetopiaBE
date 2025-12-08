@@ -32,7 +32,7 @@ public class AiServiceImpl implements AiService {
     private final VoucherRepository voucherRepository;
     private final DeliveryRepository deliveryRepository;
 
-    private static final String MODEL_NAME = "gemini-2.5-flash"; // Hoặc gemini-1.5-flash
+    private static final String MODEL_NAME = "gemini-2.5-flash";
     private final RestClient restClient = RestClient.create();
     private final Gson gson = new Gson();
 

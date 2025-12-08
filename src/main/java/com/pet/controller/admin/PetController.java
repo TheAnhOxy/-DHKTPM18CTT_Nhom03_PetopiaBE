@@ -14,10 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
@@ -66,38 +68,55 @@ public class PetController {
         );
     }
 
+//
 //    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 //    public ResponseEntity<ApiResponse> createOrUpdatePet(
-//            @Valid @ModelAttribute PetRequestDTO request // Chỉ cần cái này là đủ
+//            @RequestPart("pet") String petJson,
+//            @RequestPart(value = "files", required = false) List<MultipartFile> files
 //    ) {
 //        try {
-//            // Gọi Service (Truyền DTO vào, trong DTO đã có files)
-//            PetResponseDTO pet = petService.addOrUpdatePetWithImages(request);
+//            log.info("Đang tạo Pet với JSON: {}", petJson);
+//            PetResponseDTO pet = petService.addOrUpdatePetWithImages(petJson, files);
 //
-//            return ResponseEntity.status(HttpStatus.CREATED)
-//                    .body(ApiResponse.builder()
+//            return ResponseEntity.status(HttpStatus.CREATED).body(
+//                    ApiResponse.builder()
 //                            .status(HttpStatus.CREATED.value())
 //                            .message("Tạo/Cập nhật thú cưng thành công")
 //                            .data(pet)
-//                            .build());
+//                            .build()
+//            );
 //        } catch (Exception e) {
-//            return ResponseEntity.badRequest().body(ApiResponse.builder()
-//                    .status(400)
-//                    .message("Lỗi: " + e.getMessage())
-//                    .build());
+//            e.printStackTrace();
+//            return ResponseEntity.badRequest().body(
+//                    ApiResponse.builder()
+//                            .status(400)
+//                            .message("Lỗi: " + e.getMessage())
+//                            .build()
+//            );
 //        }
 //    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse> createOrUpdatePet(
-            @RequestPart("pet") String petJson, // 1. Nhận chuỗi JSON
-            @RequestPart(value = "files", required = false) List<MultipartFile> files // 2. Nhận file
+            @RequestPart("pet") @Valid PetRequestDTO petRequest,
+            BindingResult bindingResult,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) {
         try {
-            log.info("Đang tạo Pet với JSON: {}", petJson);
+            if (bindingResult.hasErrors()) {
+                String errorMessage = bindingResult.getAllErrors().stream()
+                        .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                        .collect(Collectors.joining(", "));
 
-            // Gọi Service đã sửa
-            PetResponseDTO pet = petService.addOrUpdatePetWithImages(petJson, files);
+                return ResponseEntity.badRequest().body(
+                        ApiResponse.builder()
+                                .status(HttpStatus.BAD_REQUEST.value())
+                                .message("Dữ liệu không hợp lệ: " + errorMessage)
+                                .build()
+                );
+            }
+            log.info("Đang tạo Pet: {}", petRequest.getName());
+            PetResponseDTO pet = petService.addOrUpdatePetWithImages(petRequest, files);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(
                     ApiResponse.builder()
