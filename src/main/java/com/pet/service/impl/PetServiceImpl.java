@@ -103,9 +103,8 @@ public class PetServiceImpl implements PetService {
 
     @Override
     @Transactional
-    public PetResponseDTO addOrUpdatePetWithImages(String petJson, List<MultipartFile> files) throws IOException {
-        PetRequestDTO requestDTO = objectMapper.readValue(petJson, PetRequestDTO.class);
-
+    // Đổi tham số thành DTO
+    public PetResponseDTO addOrUpdatePetWithImages(PetRequestDTO requestDTO, List<MultipartFile> files) throws IOException {
         Pet pet;
         boolean isUpdate = requestDTO.getPetId() != null && !requestDTO.getPetId().isEmpty();
         if (isUpdate) {
@@ -118,13 +117,14 @@ public class PetServiceImpl implements PetService {
             pet.setCreatedAt(LocalDateTime.now());
             pet.setImages(new HashSet<>());
         }
+
         petConverter.mapToEntity(requestDTO, pet);
 
-        //  Xử lý ảnh CŨ (Nếu có gửi danh sách ảnh cũ cần giữ lại)
         if (isUpdate && requestDTO.getOldImages() != null) {
             handlePetImages(pet, requestDTO.getOldImages());
         }
 
+        // ... (Logic upload ảnh mới giữ nguyên) ...
         //  Xử lý ảnh MỚI (Dùng logic AtomicInteger để không trùng ID)
         if (files != null && !files.isEmpty()) {
             String lastImageId = petImageRepository.findMaxImageId();
@@ -169,59 +169,61 @@ public class PetServiceImpl implements PetService {
 
 //    @Override
 //    @Transactional
-//    public PetResponseDTO addOrUpdatePetWithImages(PetRequestDTO requestDTO) throws IOException {
+//    public PetResponseDTO addOrUpdatePetWithImages(String petJson, List<MultipartFile> files) throws IOException {
+//        PetRequestDTO requestDTO = objectMapper.readValue(petJson, PetRequestDTO.class);
+//
 //        Pet pet;
 //        boolean isUpdate = requestDTO.getPetId() != null && !requestDTO.getPetId().isEmpty();
-//
-//        // 1. Tìm hoặc Init
 //        if (isUpdate) {
 //            pet = petRepository.findById(requestDTO.getPetId())
 //                    .orElseThrow(() -> new ResourceNotFoundException("Pet not found"));
 //            pet.setUpdatedAt(LocalDateTime.now());
 //        } else {
 //            pet = new Pet();
-//            pet.setPetId(generatePetId()); // P001...
+//            pet.setPetId(generatePetId());
 //            pet.setCreatedAt(LocalDateTime.now());
-//            // Init list ảnh rỗng để tránh null pointer
 //            pet.setImages(new HashSet<>());
 //        }
-//
-//        // 2. Map dữ liệu (Converter đã sửa ở Bước 2 sẽ giữ lại list ảnh cũ)
 //        petConverter.mapToEntity(requestDTO, pet);
 //
-//        // 3. Xử lý ảnh CŨ (Chỉ chạy khi Update)
-//        // Nếu FE gửi list oldImages, ta giữ lại những ảnh có trong list đó, xóa những cái không có
+//        //  Xử lý ảnh CŨ (Nếu có gửi danh sách ảnh cũ cần giữ lại)
 //        if (isUpdate && requestDTO.getOldImages() != null) {
 //            handlePetImages(pet, requestDTO.getOldImages());
 //        }
 //
-//        String lastImageId = petImageRepository.findMaxImageId(); // Lấy từ DB 1 lần thôi
-//        int imageCounter = 1;
-//        if (lastImageId != null && lastImageId.startsWith("PI")) {
-//            try {
-//                imageCounter = Integer.parseInt(lastImageId.substring(2)) + 1;
-//            } catch (NumberFormatException ignored) {}
-//        }
-//        AtomicInteger counter = new AtomicInteger(imageCounter);
-//        List<MultipartFile> files = requestDTO.getFiles();
+//        //  Xử lý ảnh MỚI (Dùng logic AtomicInteger để không trùng ID)
 //        if (files != null && !files.isEmpty()) {
+//            String lastImageId = petImageRepository.findMaxImageId();
+//            int imageCounter = 1;
+//            if (lastImageId != null && lastImageId.startsWith("PI")) {
+//                try {
+//                    imageCounter = Integer.parseInt(lastImageId.substring(2)) + 1;
+//                } catch (NumberFormatException ignored) {}
+//            }
+//            AtomicInteger counter = new AtomicInteger(imageCounter);
+//
 //            for (int i = 0; i < files.size(); i++) {
 //                MultipartFile file = files.get(i);
+//                // Check file rỗng
 //                if (file.isEmpty()) continue;
 //
 //                String imageUrl = cloudinaryService.uploadImage(file);
 //
 //                PetImage petImage = new PetImage();
 //
-//                // Sinh ID tăng dần: PI011, PI012...
+//                // Sinh ID tăng dần
 //                petImage.setImageId(String.format("PI%03d", counter.getAndIncrement()));
-//
 //                petImage.setPet(pet);
 //                petImage.setImageUrl(imageUrl);
 //                petImage.setCreatedAt(LocalDateTime.now());
 //
-//                boolean isFirst = pet.getImages().isEmpty(); // Check nếu list đang rỗng thì set thumb
-//                petImage.setIsThumbnail(isFirst);
+//                // Logic thumbnail: Nếu pet chưa có ảnh nào -> Ảnh đầu tiên là thumbnail
+//                boolean hasThumbnail = pet.getImages().stream().anyMatch(img -> Boolean.TRUE.equals(img.getIsThumbnail()));
+//                if (!hasThumbnail && i == 0) {
+//                    petImage.setIsThumbnail(true);
+//                } else {
+//                    petImage.setIsThumbnail(false);
+//                }
 //
 //                pet.getImages().add(petImage);
 //            }
@@ -230,6 +232,7 @@ public class PetServiceImpl implements PetService {
 //        Pet savedPet = petRepository.save(pet);
 //        return petConverter.mapToDTO(savedPet);
 //    }
+
 
     private void handlePetImages(Pet pet, List<PetImageDTO> imageDTOs) {
         // Tạo Map từ danh sách ảnh cũ gửi lên

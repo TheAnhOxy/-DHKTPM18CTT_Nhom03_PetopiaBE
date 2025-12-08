@@ -3,10 +3,10 @@ package com.pet.modal.request;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.List;
 
 @Data
@@ -14,45 +14,48 @@ public class PetRequestDTO {
 
     private String petId;
 
-    @NotBlank(message = "Name is required")
+    @NotBlank(message = "Tên thú cưng không được để trống !!")
     private String name;
 
     private String description;
 
-    @NotBlank(message = "Category is required")
+    @NotBlank(message = "Vui lòng chọn phân loại thú cưng")
     private String categoryId;
 
-    @PositiveOrZero(message = "Age must be >= 0")
+    @NotNull(message = "Tuổi không được để trống")
+    @Min(value = 1, message = "Tuổi phải ít nhất là 1 tháng") // Sửa từ PositiveOrZero thành Min(1) nếu muốn bắt buộc nhập
     private Integer age;
 
     private String gender;
 
-    @NotNull(message = "Price is required")
-    @PositiveOrZero(message = "Price must be >= 0")
+    @NotNull(message = "Giá bán không được để trống")
+    @Min(value = 1000, message = "Giá bán phải ít nhất 1.000 VNĐ")
     private Double price;
 
-    @PositiveOrZero(message = "Discount price must be >= 0")
+    @PositiveOrZero(message = "Giá giảm không được âm")
     private Double discountPrice;
 
     private String healthStatus;
     private String vaccinationHistory;
 
-    @Min(value = 1, message = "Stock quantity must be at least 1")
+    @NotNull(message = "Số lượng tồn kho không được để trống")
+    @Min(value = 1, message = "Số lượng tồn kho phải ít nhất là 1")
     private Integer stockQuantity;
 
     private String status;
-
     private String videoUrl;
 
-    @PositiveOrZero(message = "Weight must be >= 0")
+    @NotNull(message = "Cân nặng không được để trống")
+    @Positive(message = "Cân nặng phải lớn hơn 0")
     private Double weight;
 
-    @PositiveOrZero(message = "Height must be >= 0")
+    @NotNull(message = "Chiều cao không được để trống")
+    @Positive(message = "Chiều cao phải lớn hơn 0")
     private Double height;
 
     private String color;
     private String furType;
+
     private List<PetImageDTO> oldImages;
-//    private List<PetImageDTO> images;
     private List<MultipartFile> files;
 }
