@@ -1,10 +1,8 @@
 package com.pet.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -30,6 +28,8 @@ public class Category {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
+    @ToString.Exclude
+    @JsonIgnore
     private Category parent;
 
     @Column(name = "image_url")
@@ -40,11 +40,17 @@ public class Category {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore // <--- BẮT BUỘC THÊM: Nếu không sẽ lặp vô tận qua Pet
+    @ToString.Exclude
     private Set<Category> children;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore // <--- BẮT BUỘC THÊM: Nếu không sẽ lặp vô tận qua Pet
+    @ToString.Exclude
     private Set<Pet> pets;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore // <--- BẮT BUỘC THÊM: Nếu không sẽ lặp vô tận qua Pet
+    @ToString.Exclude
     private Set<Promotion> promotions;
 }

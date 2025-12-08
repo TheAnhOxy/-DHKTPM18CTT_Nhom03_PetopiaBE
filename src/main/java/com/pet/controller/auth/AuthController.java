@@ -1,9 +1,6 @@
 package com.pet.controller.auth;
 
-import com.pet.modal.request.LoginRequestDTO;
-import com.pet.modal.request.RegisterRequestDTO;
-import com.pet.modal.request.ResetPasswordRequest;
-import com.pet.modal.request.VerifyOtpRequest;
+import com.pet.modal.request.*;
 import com.pet.modal.response.ApiResponse;
 import com.pet.modal.response.LoginResponseDTO;
 import com.pet.service.AuthService;
@@ -35,6 +32,11 @@ public class AuthController {
     ) {
         System.out.println("Controller nhan dang nhap user: " + request.getIdentifier());
         return ResponseEntity.ok(service.login(request));
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<LoginResponseDTO> refreshToken(@RequestBody RefreshTokenRequest request) {
+        return ResponseEntity.ok(service.refreshToken(request));
     }
 
     @PostMapping("/forgot-password")

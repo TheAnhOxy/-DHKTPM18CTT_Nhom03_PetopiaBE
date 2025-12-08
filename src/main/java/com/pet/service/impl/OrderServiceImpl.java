@@ -1009,9 +1009,59 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         order.setStatus(status);
-        // Nếu delivered -> update payment status thành PAID (nếu là COD)
         if (status == OrderStatus.DELIVERED) {
              order.setPaymentStatus(OrderPaymentStatus.PAID);
+        }
+
+        // --- BỔ SUNG: ĐỒNG BỘ SANG DELIVERY VÀ TẠO HISTORY ---
+        // Lấy thông tin vận chuyển gắn với đơn hàng này
+        Delivery delivery = deliveryRepository.findByOrder_OrderId(orderId).orElse(null);
+
+        if (delivery != null) {
+            DeliveryStatus newDeliveryStatus = null;
+            String historyNote = "";
+
+            // Map trạng thái từ Order sang Delivery
+            switch (status) {
+                case SHIPPED:
+                    // Khi Admin bấm "Đã gửi hàng" -> Delivery chuyển sang "Đã xuất kho"
+                    newDeliveryStatus = DeliveryStatus.SHIPPED;
+                    historyNote = "Đơn hàng đã được giao cho đơn vị vận chuyển";
+                    break;
+
+                case DELIVERED:
+                    newDeliveryStatus = DeliveryStatus.DELIVERED;
+                    delivery.setActualDeliveryDate(LocalDateTime.now());
+                    historyNote = "Giao hàng thành công tới khách hàng";
+                    break;
+
+                case CANCELLED:
+                    // Khi Admin bấm "Hủy" -> Delivery chuyển sang "Thất bại" hoặc "Hủy"
+                    newDeliveryStatus = DeliveryStatus.FAILED;
+                    historyNote = "Đơn hàng đã bị hủy";
+                    break;
+
+                default:
+                    break;
+            }
+
+            // Nếu có sự thay đổi trạng thái Delivery tương ứng
+            if (newDeliveryStatus != null && delivery.getDeliveryStatus() != newDeliveryStatus) {
+                // 3.1. Cập nhật bảng Delivery
+                delivery.setDeliveryStatus(newDeliveryStatus);
+                deliveryRepository.save(delivery);
+
+                // 3.2. Tạo bản ghi lịch sử (DeliveryHistory)
+                DeliveryHistory history = new DeliveryHistory();
+                history.setHistoryId(generateDeliveryHistoryId()); // Sử dụng hàm sinh ID của bạn
+                history.setDelivery(delivery);
+                history.setStatus(newDeliveryStatus);
+                history.setDescription(historyNote);
+                history.setLocation("Hệ thống quản trị"); // Hoặc lấy địa chỉ kho nếu có
+                history.setUpdatedAt(LocalDateTime.now()); // Entity bạn dùng @CreationTimestamp nên field này có thể tự sinh, hoặc set thủ công
+
+                deliveryHistoryRepository.save(history);
+            }
         }
 
         return orderConverter.toResponseDTO(orderRepository.save(order));
