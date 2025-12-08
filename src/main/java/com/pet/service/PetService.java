@@ -21,7 +21,8 @@ public interface PetService {
     PageResponse<PetForListResponseDTO> getAllPetsWithStatusActive(int page, int size);
     PageResponse<PetForListResponseDTO> advanceSearch(PetSearchRequestDTO request);
 //    PetResponseDTO addOrUpdatePetWithImages(PetRequestDTO requestDTO) throws IOException;
-PetResponseDTO addOrUpdatePetWithImages(String petJson, List<MultipartFile> files) throws IOException;
+//PetResponseDTO addOrUpdatePetWithImages(String petJson, List<MultipartFile> files) throws IOException;
+PetResponseDTO addOrUpdatePetWithImages(PetRequestDTO requestDTO, List<MultipartFile> files) throws IOException;
     PetResponseDTO inactivePet(String petId);
     PageResponse<PetForListResponseDTO> getAllPetsList(int page, int size);
     void deletePetPermanent(String petId);

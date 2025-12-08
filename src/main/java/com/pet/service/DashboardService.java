@@ -107,7 +107,7 @@ public class DashboardService {
         return value == null ? 0.0 : value;
     }
 
-    @Cacheable(value = "dashboard_monthly_chart", key = "#year")
+//    @Cacheable(value = "dashboard_monthly_chart", key = "#year")
     public List<MonthlyRevenueDTO> getMonthlyRevenueChart(int year) {
         // 1. Lấy dữ liệu thô từ DB
         List<Object[]> rawData = orderRepository.getMonthlyRevenue(year);
