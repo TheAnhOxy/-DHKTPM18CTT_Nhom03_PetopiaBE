@@ -26,6 +26,5 @@ public class WebConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:uploads/");
-        // Lưu ý: Nếu bạn lưu ngoài project, dùng dạng: file:/absolute/path/uploads/
     }
 }

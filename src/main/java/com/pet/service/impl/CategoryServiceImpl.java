@@ -56,7 +56,7 @@ public class CategoryServiceImpl implements CategoryService {
 
             Category category;
             boolean isUpdate = request.getCategoryId() != null && !request.getCategoryId().isEmpty();
-            String oldImageUrl = null; 
+            String oldImageUrl = null;
             if (isUpdate) {
                 category = categoryRepository.findById(request.getCategoryId())
                         .orElseThrow(() -> new ResourceNotFoundException("Danh mục không tồn tại"));
