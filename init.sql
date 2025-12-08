@@ -623,29 +623,29 @@ INSERT INTO vouchers (
     min_order_amount, start_date, end_date, max_usage, used_count,
     status, image_url, created_at
 ) VALUES
-('V001', 'PET10', 'Giảm 10% cho đơn hàng', 'PERCENTAGE', 10, 10000000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', 'https://i.imgur.com/1vOuWJg.jpg', '2025-08-11 14:26:00'),
-('V002', 'PET200K', 'Giảm 200K cho đơn hàng', 'FIXED_AMOUNT', 200000, 5000000, '2025-08-01', '2025-08-31', 200, 0, 'ACTIVE', 'https://i.imgur.com/4Jv8AqR.jpg', '2025-08-11 14:26:00'),
-('V003', 'FREESHIP', 'Miễn phí vận chuyển', 'FIXED_AMOUNT', 150000, 5000000, '2025-08-01', '2025-08-31', 200, 0, 'ACTIVE', 'https://i.imgur.com/sz1iA8R.jpg', '2025-08-11 14:26:00'),
-('V004', 'NEWUSER', 'Giảm 15% cho khách mới', 'PERCENTAGE', 15, 8000000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', 'https://i.imgur.com/8muSVxx.jpg', '2025-08-11 14:26:00'),
-('V005', 'PET500K', 'Giảm 500K cho đơn hàng', 'FIXED_AMOUNT', 500000, 15000000, '2025-08-01', '2025-08-31', 50, 0, 'ACTIVE', 'https://i.imgur.com/N7nbfIT.jpg', '2025-08-11 14:26:00'),
-('V006', 'CATLOVE', 'Giảm 10% cho mèo', 'PERCENTAGE', 10, 7000000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', 'https://i.imgur.com/hPO1hfj.jpg', '2025-08-11 14:26:00'),
-('V007', 'DOGLOVE', 'Giảm 10% cho chó', 'PERCENTAGE', 10, 7000000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', 'https://i.imgur.com/SqvZVjv.jpg', '2025-08-11 14:26:00'),
-('V008', 'VIP100', 'Giảm 100K cho khách VIP', 'FIXED_AMOUNT', 100000, 3000000, '2025-08-01', '2025-08-31', 200, 0, 'ACTIVE', 'https://i.imgur.com/MgEOa2x.jpg', '2025-08-11 14:26:00'),
-('V009', 'SUMMER25', 'Giảm 25% mùa hè', 'PERCENTAGE', 25, 20000000, '2025-08-01', '2025-08-31', 50, 0, 'INACTIVE', 'https://i.imgur.com/nH1vDqx.jpg', '2025-08-11 14:26:00'),
-('V010', 'PET50K', 'Giảm 50K cho dịch vụ', 'FIXED_AMOUNT', 50000, 200000, '2025-08-01', '2025-08-31', 200, 0, 'ACTIVE', 'https://i.imgur.com/XVb2WUE.jpg', '2025-08-11 14:26:00');
+('V001', 'PET10', 'Giảm 10% cho đơn hàng', 'PERCENTAGE', 10, 10000000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178651/Gemini_Generated_Image_fg2ooofg2ooofg2o_xw90cw.png', '2025-08-11 14:26:00'),
+('V002', 'PET200K', 'Giảm 200K cho đơn hàng', 'FIXED_AMOUNT', 200000, 5000000, '2025-08-01', '2025-08-31', 200, 0, 'ACTIVE', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178651/Gemini_Generated_Image_fg2ooofg2ooofg2o_xw90cw.png', '2025-08-11 14:26:00'),
+('V003', 'FREESHIP', 'Miễn phí vận chuyển', 'FIXED_AMOUNT', 150000, 5000000, '2025-08-01', '2025-08-31', 200, 0, 'ACTIVE', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178651/Gemini_Generated_Image_fg2ooofg2ooofg2o_xw90cw.png', '2025-08-11 14:26:00'),
+('V004', 'NEWUSER', 'Giảm 15% cho khách mới', 'PERCENTAGE', 15, 8000000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178651/Gemini_Generated_Image_fg2ooofg2ooofg2o_xw90cw.png', '2025-08-11 14:26:00'),
+('V005', 'PET500K', 'Giảm 500K cho đơn hàng', 'FIXED_AMOUNT', 500000, 15000000, '2025-08-01', '2025-08-31', 50, 0, 'ACTIVE', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178651/Gemini_Generated_Image_fg2ooofg2ooofg2o_xw90cw.png', '2025-08-11 14:26:00'),
+('V006', 'CATLOVE', 'Giảm 10% cho mèo', 'PERCENTAGE', 10, 7000000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178651/Gemini_Generated_Image_fg2ooofg2ooofg2o_xw90cw.png', '2025-08-11 14:26:00'),
+('V007', 'DOGLOVE', 'Giảm 10% cho chó', 'PERCENTAGE', 10, 7000000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178651/Gemini_Generated_Image_fg2ooofg2ooofg2o_xw90cw.png', '2025-08-11 14:26:00'),
+('V008', 'VIP100', 'Giảm 100K cho khách VIP', 'FIXED_AMOUNT', 100000, 3000000, '2025-08-01', '2025-08-31', 200, 0, 'ACTIVE', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178651/Gemini_Generated_Image_fg2ooofg2ooofg2o_xw90cw.png', '2025-08-11 14:26:00'),
+('V009', 'SUMMER25', 'Giảm 25% mùa hè', 'PERCENTAGE', 25, 20000000, '2025-08-01', '2025-08-31', 50, 0, 'INACTIVE', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178651/Gemini_Generated_Image_fg2ooofg2ooofg2o_xw90cw.png', '2025-08-11 14:26:00'),
+('V010', 'PET50K', 'Giảm 50K cho dịch vụ', 'FIXED_AMOUNT', 50000, 200000, '2025-08-01', '2025-08-31', 200, 0, 'ACTIVE', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178651/Gemini_Generated_Image_fg2ooofg2ooofg2o_xw90cw.png', '2025-08-11 14:26:00');
 
 -- Dữ liệu mẫu cho bảng promotions
 INSERT INTO promotions (promotion_id, code, description, promotion_type, discount_value, min_order_amount, start_date, end_date, max_usage, used_count, status, category_id, image_url, created_at) VALUES
-('PR001', 'SUMMERDOG', 'Giảm giá cho chó mùa hè', 'DISCOUNT', 10, 10000000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', 'C001', 'dog_promo.jpg', '2025-08-11 14:26:00'),
-('PR002', 'FREECAT', 'Miễn phí vận chuyển cho mèo', 'FREESHIP', 150000, 5000000, '2025-08-01', '2025-08-31', 200, 0, 'ACTIVE', 'C002', 'cat_promo.jpg', '2025-08-11 14:26:00'),
-('PR003', 'POODLE20', 'Giảm 20% cho Poodle', 'DISCOUNT', 20, 12000000, '2025-08-01', '2025-08-31', 50, 0, 'ACTIVE', 'C003', 'poodle_promo.jpg', '2025-08-11 14:26:00'),
-('PR004', 'GOLDEN10', 'Giảm 10% cho Golden', 'DISCOUNT', 10, 15000000, '2025-08-01', '2025-08-31', 50, 0, 'ACTIVE', 'C004', 'golden_promo.jpg', '2025-08-11 14:26:00'),
-('PR005', 'HUSKY15', 'Giảm 15% cho Husky', 'DISCOUNT', 15, 13000000, '2025-08-01', '2025-08-31', 50, 0, 'ACTIVE', 'C005', 'husky_promo.jpg', '2025-08-11 14:26:00'),
-('PR006', 'CATSPA', 'Miễn phí spa cho mèo', 'BUNDLE', 300000, 7000000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', 'C002', 'catspa_promo.jpg', '2025-08-11 14:26:00'),
-('PR007', 'DOGCARE', 'Giảm giá dịch vụ chăm sóc chó', 'DISCOUNT', 10, 500000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', 'C001', 'dogcare_promo.jpg', '2025-08-11 14:26:00'),
-('PR008', 'CASHBACK100', 'Hoàn tiền 100K', 'CASHBACK', 100000, 10000000, '2025-08-01', '2025-08-31', 200, 0, 'ACTIVE', NULL, 'cashback_promo.jpg', '2025-08-11 14:26:00'),
-('PR009', 'BUNDLEPET', 'Combo thú cưng + dịch vụ', 'BUNDLE', 500000, 15000000, '2025-08-01', '2025-08-31', 50, 0, 'INACTIVE', NULL, 'bundle_promo.jpg', '2025-08-11 14:26:00'),
-('PR010', 'NEWARRIVAL', 'Giảm 5% cho thú cưng mới', 'DISCOUNT', 5, 10000000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', NULL, 'newarrival_promo.jpg', '2025-08-11 14:26:00');
+('PR001', 'SUMMERDOG', 'Giảm giá cho chó mùa hè', 'DISCOUNT', 10, 10000000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', 'C001', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178647/Gemini_Generated_Image_4dj7ih4dj7ih4dj7_ne3mfr.png', '2025-08-11 14:26:00'),
+('PR002', 'FREECAT', 'Miễn phí vận chuyển cho mèo', 'FREESHIP', 150000, 5000000, '2025-08-01', '2025-08-31', 200, 0, 'ACTIVE', 'C002', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178647/Gemini_Generated_Image_26j83426j83426j8_w5dffy.png', '2025-08-11 14:26:00'),
+('PR003', 'POODLE20', 'Giảm 20% cho Poodle', 'DISCOUNT', 20, 12000000, '2025-08-01', '2025-08-31', 50, 0, 'ACTIVE', 'C003', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178647/Gemini_Generated_Image_gl9hi2gl9hi2gl9h_bpng2f.png', '2025-08-11 14:26:00'),
+('PR004', 'GOLDEN10', 'Giảm 10% cho Golden', 'DISCOUNT', 10, 15000000, '2025-08-01', '2025-08-31', 50, 0, 'ACTIVE', 'C004', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178646/Gemini_Generated_Image_375xrz375xrz375x_ruoqje.png', '2025-08-11 14:26:00'),
+('PR005', 'HUSKY15', 'Giảm 15% cho Husky', 'DISCOUNT', 15, 13000000, '2025-08-01', '2025-08-31', 50, 0, 'ACTIVE', 'C005', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178646/Gemini_Generated_Image_gg84mtgg84mtgg84_ps8p0s.png', '2025-08-11 14:26:00'),
+('PR006', 'CATSPA', 'Miễn phí spa cho mèo', 'BUNDLE', 300000, 7000000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', 'C002', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178647/Gemini_Generated_Image_ajhtbkajhtbkajht_fc3oz9.png', '2025-08-11 14:26:00'),
+('PR007', 'DOGCARE', 'Giảm giá dịch vụ chăm sóc chó', 'DISCOUNT', 10, 500000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', 'C001', 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178646/Gemini_Generated_Image_jdhmt2jdhmt2jdhm_yvjtaz.png', '2025-08-11 14:26:00'),
+('PR008', 'CASHBACK100', 'Hoàn tiền 100K', 'CASHBACK', 100000, 10000000, '2025-08-01', '2025-08-31', 200, 0, 'ACTIVE', NULL, 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178645/Gemini_Generated_Image_mod1gcmod1gcmod1_bcxy1n.png', '2025-08-11 14:26:00'),
+('PR009', 'BUNDLEPET', 'Combo thú cưng + dịch vụ', 'BUNDLE', 500000, 15000000, '2025-08-01', '2025-08-31', 50, 0, 'INACTIVE', NULL, 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178645/Gemini_Generated_Image_f6k9lzf6k9lzf6k9_hmxkqh.png', '2025-08-11 14:26:00'),
+('PR010', 'NEWARRIVAL', 'Giảm 5% cho thú cưng mới', 'DISCOUNT', 5, 10000000, '2025-08-01', '2025-08-31', 100, 0, 'ACTIVE', NULL, 'https://res.cloudinary.com/dwzjxsdli/image/upload/v1765178646/Gemini_Generated_Image_7youmr7youmr7you_ytd6rt.png', '2025-08-11 14:26:00');
 
 -- Dữ liệu mẫu cho bảng order_vouchers
 INSERT INTO order_vouchers (order_voucher_id, order_id, voucher_id, discount_applied) VALUES
