@@ -8,5 +8,6 @@ import lombok.Data;
 public class ChatResponseDTO {
     private String message;
     private String actionType;
-    private Object data;
+    private String dataType;   // "pet", "service", "article", null
+    private Object data;       // chính là rawData
 }

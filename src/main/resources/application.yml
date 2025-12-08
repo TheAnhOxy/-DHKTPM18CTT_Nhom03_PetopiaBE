@@ -11,6 +11,9 @@ spring:
     openai:
       api-key: ${GEMINI_API_KEY}
 
+#      api-key: "AIzaSyA-GMdd3hxvZkkZDWFFHwO_EGNaSOvq8lA"
+
+
       # Xóa dấu / ở cuối đường dẫn
       base-url: "https://generativelanguage.googleapis.com/v1beta/openai"
       chat:
