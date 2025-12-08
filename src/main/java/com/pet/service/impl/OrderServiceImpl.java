@@ -381,7 +381,8 @@ public class OrderServiceImpl implements OrderService {
         Payment payment = new Payment();
         payment.setPaymentId(generatePaymentId());
         payment.setOrder(order);
-        payment.setAmount(order.getTotalAmount());
+        // Lưu số tiền đã làm tròn (amount fixed) để tạo QR cố định
+        payment.setAmount((double) Math.round(order.getTotalAmount()));
         payment.setPaymentMethod(method);
         payment.setPaymentDate(LocalDateTime.now());
 
@@ -389,7 +390,7 @@ public class OrderServiceImpl implements OrderService {
             // BANK: Trạng thái PENDING, Tạo QR
             payment.setPaymentStatus(PaymentStatus.PENDING);
             String content = "SEVQR " + order.getOrderId();
-            String qrUrl = sePayService.generateQrUrl(order.getTotalAmount(), content);
+            String qrUrl = sePayService.generateQrUrl(payment.getAmount(), content);
             payment.setPaymentUrl(qrUrl);
             payment.setTransactionId(content);
             paymentRepository.save(payment);
@@ -449,16 +450,22 @@ public class OrderServiceImpl implements OrderService {
             return;
         }
 
-        //  Kiểm tra số tiền (Phải chuyển đủ hoặc dư)
-        if (webhookData.getTransferAmount() < payment.getAmount()) {
-            // Chuyển thiếu tiền: Đánh dấu giao dịch FAILED, set paymentStatus của đơn là FAILED
+        //  Kiểm tra số tiền: yêu cầu đúng số tiền đã fix trong QR (amount fixed)
+        double requiredAmount = payment.getAmount(); // đã được làm tròn và cố định
+        double transferredAmount = webhookData.getTransferAmount();
+
+        // cho phép sai số rất nhỏ (0.5 VND) để tránh lỗi làm tròn từ phía ngân hàng
+        double tolerance = 0.5;
+
+        if (Math.abs(transferredAmount - requiredAmount) > tolerance) {
+            // Chuyển sai số tiền (thiếu hoặc dư đáng kể): Đánh dấu FAILED
             payment.setPaymentStatus(PaymentStatus.FAILED);
             paymentRepository.save(payment);
 
-            Order underPaidOrder = payment.getOrder();
-            if (underPaidOrder != null) {
-                underPaidOrder.setPaymentStatus(OrderPaymentStatus.FAILED);
-                orderRepository.save(underPaidOrder);
+            Order mismatchOrder = payment.getOrder();
+            if (mismatchOrder != null) {
+                mismatchOrder.setPaymentStatus(OrderPaymentStatus.FAILED);
+                orderRepository.save(mismatchOrder);
             }
             // Không throw exception để tránh rollback transaction
             return;
@@ -938,7 +945,8 @@ public class OrderServiceImpl implements OrderService {
         Payment payment = new Payment();
         payment.setPaymentId(generatePaymentId()); // PMxxx
         payment.setOrder(order);
-        payment.setAmount(order.getTotalAmount());
+        // Lưu số tiền đã làm tròn (amount fixed) để tạo QR cố định
+        payment.setAmount((double) Math.round(order.getTotalAmount()));
         payment.setPaymentMethod(method);
         payment.setPaymentStatus(PaymentStatus.PENDING);
         payment.setPaymentDate(LocalDateTime.now());
@@ -947,7 +955,7 @@ public class OrderServiceImpl implements OrderService {
         if (method == PaymentMethod.BANK_TRANSFER) {
             // Nội dung CK: "SEVQR [Mã Đơn]"
             String content = "SEVQR " + order.getOrderId();
-            String qrUrl = sePayService.generateQrUrl(order.getTotalAmount(), content);
+            String qrUrl = sePayService.generateQrUrl(payment.getAmount(), content);
 
             payment.setPaymentUrl(qrUrl); // Lưu link QR vào DB
             payment.setTransactionId(content); // Lưu nội dung ck để đối soát
