@@ -12,4 +12,6 @@ public class CategoryResponseDTO {
     private String name;
     private String description;
     private String imageUrl;
+    private String parentId;
+    private String parentName;
 }
