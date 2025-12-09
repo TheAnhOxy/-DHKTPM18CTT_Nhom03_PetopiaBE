@@ -185,10 +185,10 @@ public class OrderServiceImpl implements OrderService {
 
         // Set trạng thái ban đầu
         if (request.getPaymentMethod() == PaymentMethod.COD) {
-            order.setStatus(OrderStatus.DELIVERED); // Logic : COD coi như xong luôn? (Thường là Pending -> Shipping)
+            order.setStatus(OrderStatus.SHIPPED); // Logic : COD coi như xong luôn? (Thường là Pending -> Shipping)
             order.setPaymentStatus(OrderPaymentStatus.PAID);
         } else {
-            order.setStatus(OrderStatus.CONFIRMED);
+            order.setStatus(OrderStatus.PENDING);
             order.setPaymentStatus(OrderPaymentStatus.UNPAID);
         }
 
@@ -478,7 +478,7 @@ public class OrderServiceImpl implements OrderService {
 
         // Update Order -> DELIVERED & PAID
         Order order = payment.getOrder();
-        order.setStatus(OrderStatus.DELIVERED);
+        order.setStatus(OrderStatus.CONFIRMED);
         order.setPaymentStatus(OrderPaymentStatus.PAID);
         orderRepository.save(order);
 
@@ -500,17 +500,17 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // Lấy phương thức thanh toán
-        String paymentMethodText = payment.getPaymentMethod() == PaymentMethod.BANK_TRANSFER 
-                ? "Chuyển khoản ngân hàng" 
+        String paymentMethodText = payment.getPaymentMethod() == PaymentMethod.BANK_TRANSFER
+                ? "Chuyển khoản ngân hàng"
                 : "Thanh toán khi nhận hàng (COD)";
 
         // Format ngày đặt hàng
-        String orderDate = order.getCreatedAt() != null 
+        String orderDate = order.getCreatedAt() != null
                 ? order.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
                 : "N/A";
 
         // Tính tổng tiền sản phẩm (trước khi trừ giảm giá và cộng phí ship)
-        double itemsSubtotal = order.getTotalAmount() 
+        double itemsSubtotal = order.getTotalAmount()
                 - (order.getShippingFee() != null ? order.getShippingFee() : 0.0)
                 + (order.getDiscountAmount() != null ? order.getDiscountAmount() : 0.0);
 
@@ -522,7 +522,7 @@ public class OrderServiceImpl implements OrderService {
                 int quantity = item.getQuantity() != null ? item.getQuantity() : 1;
                 double price = item.getPriceAtPurchase() != null ? item.getPriceAtPurchase() : 0.0;
                 double itemTotal = price * quantity;
-                
+
                 itemsHtml.append(String.format("""
                     <tr style="border-bottom: 1px solid #e0e0e0;">
                         <td style="padding: 12px; vertical-align: top; word-wrap: break-word;">
@@ -675,26 +675,26 @@ public class OrderServiceImpl implements OrderService {
                     </div>
                 </div>
             </div>
-            """, 
-            customerName,
-            order.getOrderId(),
-            orderDate,
-            paymentMethodText,
-            itemsHtml.toString(),
-            order.getUser() != null ? order.getUser().getFullName() : "N/A",
-            order.getPhoneNumber() != null ? order.getPhoneNumber() : "N/A",
-            shippingAddress,
-            itemsSubtotal,
-            order.getShippingFee() != null ? order.getShippingFee() : 0.0,
-            order.getDiscountAmount() != null && order.getDiscountAmount() > 0 
-                ? String.format("""
+            """,
+                customerName,
+                order.getOrderId(),
+                orderDate,
+                paymentMethodText,
+                itemsHtml.toString(),
+                order.getUser() != null ? order.getUser().getFullName() : "N/A",
+                order.getPhoneNumber() != null ? order.getPhoneNumber() : "N/A",
+                shippingAddress,
+                itemsSubtotal,
+                order.getShippingFee() != null ? order.getShippingFee() : 0.0,
+                order.getDiscountAmount() != null && order.getDiscountAmount() > 0
+                        ? String.format("""
                     <tr>
                         <td style="padding: 10px 0; color: #555;">Giảm giá:</td>
                         <td style="padding: 10px 0; text-align: right; color: #e74c3c; word-wrap: break-word;">-%,.0f VNĐ</td>
                     </tr>
                     """, order.getDiscountAmount())
-                : "",
-            order.getTotalAmount()
+                        : "",
+                order.getTotalAmount()
         );
     }
 
@@ -747,12 +747,12 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // Format ngày đặt hàng
-        String orderDate = order.getCreatedAt() != null 
+        String orderDate = order.getCreatedAt() != null
                 ? order.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
                 : "N/A";
 
         // Tính tổng tiền sản phẩm (trước khi trừ giảm giá và cộng phí ship)
-        double itemsSubtotal = order.getTotalAmount() 
+        double itemsSubtotal = order.getTotalAmount()
                 - (order.getShippingFee() != null ? order.getShippingFee() : 0.0)
                 + (order.getDiscountAmount() != null ? order.getDiscountAmount() : 0.0);
 
@@ -764,7 +764,7 @@ public class OrderServiceImpl implements OrderService {
                 int quantity = item.getQuantity() != null ? item.getQuantity() : 1;
                 double price = item.getPriceAtPurchase() != null ? item.getPriceAtPurchase() : 0.0;
                 double itemTotal = price * quantity;
-                
+
                 itemsHtml.append(String.format("""
                     <tr style="border-bottom: 1px solid #e0e0e0;">
                         <td style="padding: 12px; vertical-align: top; word-wrap: break-word;">
@@ -918,25 +918,25 @@ public class OrderServiceImpl implements OrderService {
                     </div>
                 </div>
             </div>
-            """, 
-            customerName,
-            order.getOrderId(),
-            orderDate,
-            itemsHtml.toString(),
-            order.getUser() != null ? order.getUser().getFullName() : "N/A",
-            order.getPhoneNumber() != null ? order.getPhoneNumber() : "N/A",
-            shippingAddress,
-            itemsSubtotal,
-            order.getShippingFee() != null ? order.getShippingFee() : 0.0,
-            order.getDiscountAmount() != null && order.getDiscountAmount() > 0 
-                ? String.format("""
+            """,
+                customerName,
+                order.getOrderId(),
+                orderDate,
+                itemsHtml.toString(),
+                order.getUser() != null ? order.getUser().getFullName() : "N/A",
+                order.getPhoneNumber() != null ? order.getPhoneNumber() : "N/A",
+                shippingAddress,
+                itemsSubtotal,
+                order.getShippingFee() != null ? order.getShippingFee() : 0.0,
+                order.getDiscountAmount() != null && order.getDiscountAmount() > 0
+                        ? String.format("""
                     <tr>
                         <td style="padding: 10px 0; color: #555;">Giảm giá:</td>
                         <td style="padding: 10px 0; text-align: right; color: #e74c3c; word-wrap: break-word;">-%,.0f VNĐ</td>
                     </tr>
                     """, order.getDiscountAmount())
-                : "",
-            order.getTotalAmount()
+                        : "",
+                order.getTotalAmount()
         );
     }
 
@@ -1010,7 +1010,7 @@ public class OrderServiceImpl implements OrderService {
 
         order.setStatus(status);
         if (status == OrderStatus.DELIVERED) {
-             order.setPaymentStatus(OrderPaymentStatus.PAID);
+            order.setPaymentStatus(OrderPaymentStatus.PAID);
         }
 
         // --- BỔ SUNG: ĐỒNG BỘ SANG DELIVERY VÀ TẠO HISTORY ---
@@ -1025,7 +1025,7 @@ public class OrderServiceImpl implements OrderService {
             switch (status) {
                 case SHIPPED:
                     // Khi Admin bấm "Đã gửi hàng" -> Delivery chuyển sang "Đã xuất kho"
-                    newDeliveryStatus = DeliveryStatus.SHIPPED;
+                    newDeliveryStatus = DeliveryStatus.IN_TRANSIT;
                     historyNote = "Đơn hàng đã được giao cho đơn vị vận chuyển";
                     break;
 
