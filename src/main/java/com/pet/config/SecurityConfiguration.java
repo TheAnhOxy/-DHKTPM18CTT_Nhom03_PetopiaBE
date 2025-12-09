@@ -37,9 +37,11 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         //  PUBLIC ENDPOINTS (Cho GUEST) - Không cần token
                         .requestMatchers("/api/auth/**", "/auth/**").permitAll() // Đăng nhập, Đăng ký
-                        .requestMatchers("/api/payment/sepay-webhook").permitAll() // Webhook thanh toán
+                        .requestMatchers("/api/payments/sepay-webhook").permitAll() // Webhook thanh toán
                         .requestMatchers("/api/chat", "/api/chat/**").permitAll()
+                        .requestMatchers("/api/contact", "/api/contact/**").permitAll()
                         .requestMatchers("/api/reviews").permitAll()
+
                         // Cho phép xem danh sách (GET) mà không cần login
                         .requestMatchers(HttpMethod.GET, "/api/pets/**", "/api/categories/**", "/api/services/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
