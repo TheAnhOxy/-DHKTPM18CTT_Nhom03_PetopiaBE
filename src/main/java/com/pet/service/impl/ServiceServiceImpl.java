@@ -15,6 +15,7 @@ import com.pet.repository.BookingServiceRepository;
 import com.pet.repository.ServiceRepository;
 import com.pet.repository.UserRepository;
 import com.pet.service.CloudinaryService;
+import com.pet.service.EmailService;
 import com.pet.service.ServiceManagement;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +40,7 @@ public class ServiceServiceImpl implements ServiceManagement {
     @Autowired private ModelMapper modelMapper;
     @Autowired private CloudinaryService cloudinaryService;
     @Autowired private ObjectMapper objectMapper;
-
+    @Autowired private EmailService emailService;
     @Override
 //    @Cacheable(value = "services_list", key = "#keyword + '-' + #page + '-' + #size") // Cache theo cả keyword
     public PageResponse<ServiceResponseDTO> getAllServices(String keyword, int page, int size) {
@@ -112,7 +113,7 @@ public class ServiceServiceImpl implements ServiceManagement {
         booking.setNote(request.getNote());
         booking.setQuantity(request.getQuantity());
         booking.setPriceAtPurchase(serviceEntity.getPrice());
-
+        emailService.sendBookingNotification(request, booking);
         return serviceConverter.toBookingResponseDTO(bookingRepository.save(booking));
     }
 

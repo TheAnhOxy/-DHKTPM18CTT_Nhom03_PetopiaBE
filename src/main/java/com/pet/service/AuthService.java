@@ -1,5 +1,6 @@
 package com.pet.service;
 
+import com.pet.converter.UserConverter;
 import com.pet.entity.User;
 import com.pet.enums.UserRole;
 import com.pet.modal.request.LoginRequestDTO;
@@ -10,7 +11,10 @@ import com.pet.repository.UserRepository;
 import com.pet.utils.JwtTokenUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +32,7 @@ public class AuthService {
     private final JwtTokenUtils jwtUtils;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-
+    private final UserConverter userConverter;
     private final Map<String, String> otpStorage = new HashMap<>();
     private final Map<String, Instant> otpExpiry = new HashMap<>();
 
@@ -67,31 +71,44 @@ public class AuthService {
         var jwtToken = jwtUtils.generateToken(user);
         return LoginResponseDTO.builder()
                 .accessToken(jwtToken)
-                .user(user)
+                .user(userConverter.toUserResponseDTO(user))
                 .build();
     }
-
     public LoginResponseDTO login(LoginRequestDTO request) {
+
         System.out.println("Dang nhap user: " + request.getIdentifier());
+
+        // Xác thực username + password (để mặc định ném lỗi nếu sai)
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getIdentifier(),
                         request.getPassword()
                 )
         );
-        System.out.println("Dang nhap thanh cong");
-        var user = userRepository.findByIdentifier(request.getIdentifier())
-                .orElseThrow();
 
-        var token =  jwtUtils.generateToken(user);
-        String refreshToken = jwtUtils.generateRefreshToken(user);
+        // Lấy user từ DB (ném lỗi nếu không tồn tại)
+        var user = userRepository.findByIdentifier(request.getIdentifier())
+                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        String token;
+        String refreshToken;
+
+        try {
+            // Chỉ bắt lỗi phần tạo token
+            token = jwtUtils.generateToken(user);
+            refreshToken = jwtUtils.generateRefreshToken(user);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi tạo token: " + e.getMessage());
+        }
 
         return LoginResponseDTO.builder()
                 .accessToken(token)
-                .refreshToken(refreshToken) // <--- Đã có dữ liệu
-                .user(user)
+                .refreshToken(refreshToken)
+                .user(userConverter.toUserResponseDTO(user))
                 .build();
     }
+
+
 
     public LoginResponseDTO refreshToken(RefreshTokenRequest request) {
         String refreshToken = request.getRefreshToken();
@@ -112,7 +129,7 @@ public class AuthService {
             return LoginResponseDTO.builder()
                     .accessToken(newAccessToken)
                     .refreshToken(refreshToken)
-                    .user(user)
+                    .user(userConverter.toUserResponseDTO(user))
                     .build();
         } else {
             throw new RuntimeException("Refresh token không hợp lệ hoặc đã hết hạn");

@@ -31,6 +31,7 @@ public class AuthController {
             @RequestBody LoginRequestDTO request
     ) {
         System.out.println("Controller nhan dang nhap user: " + request.getIdentifier());
+        System.out.println(service.login(request));
         return ResponseEntity.ok(service.login(request));
     }
 
