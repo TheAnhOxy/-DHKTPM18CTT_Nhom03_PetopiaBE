@@ -1,13 +1,30 @@
 package com.pet.modal.response;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class AiIntentDTO {
-    // Loại ý định: SEARCH_PET, SEARCH_SERVICE, SEARCH_ARTICLE, CHECK_ORDER, CHECK_VOUCHER, GENERAL_CHAT
     private String intent;
 
-    private String keyword;     // Từ khóa (ví dụ: "Corgi", "Poodle", "Spa")
-    private Double max_price;   // Giá tối đa khách nhắc đến
-    private String tracking_id; // Mã đơn hàng (nếu khách hỏi vận chuyển)
+    private String keyword;
+
+    private Double max_price;
+    private Double min_price;
+
+    private String furType;     // "curly", "long", "short", ...
+    private String size;        // "small", "medium", "large"
+    private String color;       // "white","black",...
+
+    private String sortBy;       // "PRICE" | "DATE" | null
+    private String sortDirection; // "ASC" | "DESC" | null
+
+    private Boolean wantsBest;
+
+    private String tracking_id;
+
+    private Double confidence;
 }

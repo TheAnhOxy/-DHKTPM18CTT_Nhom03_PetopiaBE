@@ -1,11 +1,10 @@
 package com.pet.service;
 
-import com.pet.entity.Pet;
 import com.pet.modal.request.PetRequestDTO;
-import com.pet.modal.search.PetSearchRequestDTO;
 import com.pet.modal.response.PageResponse;
 import com.pet.modal.response.PetForListResponseDTO;
 import com.pet.modal.response.PetResponseDTO;
+import com.pet.modal.search.PetSearchRequestDTO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;

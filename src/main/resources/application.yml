@@ -9,8 +9,10 @@ spring:
       write-dates-as-timestamps: false
   ai:
     openai:
-#      api-key: ${GEMINI_API_KEY}
-      api-key: "AIzaSyA-GMdd3hxvZkkZDWFFHwO_EGNaSOvq8lA"
+      api-key: ${GEMINI_API_KEY}
+
+#      api-key: "AIzaSyA-GMdd3hxvZkkZDWFFHwO_EGNaSOvq8lA"
+
 
       # Xóa dấu / ở cuối đường dẫn
       base-url: "https://generativelanguage.googleapis.com/v1beta/openai"
@@ -62,7 +64,9 @@ logging:
 
 jwt:
   secretKey: "UGV0b3BpYS1Qcm9qZWN0LVNlY3JldC1LZXktRm9yLUpXVC1HZW5lcmF0aW9uLVZlcnktU2VjdXJlLUFuZC1Mb25n"
-  expiration: 86400
+#  expiration: 86400
+  expiration: 86400000          # 1 ngày (Access Token)
+  refresh-expiration: 604800000 # 7 ngày (Refresh Token) - Thêm dòng này
 
 dev:
   nguyen: Nguyen-The-Anh

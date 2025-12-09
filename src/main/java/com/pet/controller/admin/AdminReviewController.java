@@ -83,7 +83,7 @@ public class AdminReviewController {
         return ResponseEntity.ok(ApiResponse.builder()
                 .status(200)
                 .message("Đã xóa câu trả lời của Admin")
-                .data(reviewService.deleteReply(reviewId)) // Trả về DTO mới nhất để FE cập nhật lại UI
+                .data(reviewService.deleteReply(reviewId))
                 .build());
     }
 
