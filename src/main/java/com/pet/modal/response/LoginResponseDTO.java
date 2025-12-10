@@ -17,5 +17,5 @@ public class LoginResponseDTO {
 
 //    @JsonProperty("refresh_token")
     private String refreshToken;
-    private User user;
+    private UserResponseDTO user;
 }

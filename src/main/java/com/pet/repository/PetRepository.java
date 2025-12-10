@@ -38,5 +38,5 @@ public interface PetRepository extends JpaRepository<Pet, String>, JpaSpecificat
             "OR LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
             "(:maxPrice IS NULL OR p.price <= :maxPrice)")
     List<Pet> searchForChat(@Param("keyword") String keyword, @Param("maxPrice") Double maxPrice, Pageable pageable);
-
+    List<Pet> findTop5ByOrderByPriceAsc();
 }

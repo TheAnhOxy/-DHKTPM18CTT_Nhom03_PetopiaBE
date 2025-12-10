@@ -24,4 +24,5 @@ public interface ServiceRepository extends JpaRepository<Service, String> {
     // AI
     @Query("SELECT s FROM Service s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR s.description LIKE CONCAT('%', :keyword, '%')")
     List<Service> searchServicesForChat(@Param("keyword") String keyword);
+    List<Service> findTop3ByOrderByPriceAsc();
 }

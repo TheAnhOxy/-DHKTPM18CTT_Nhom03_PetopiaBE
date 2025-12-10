@@ -1,6 +1,7 @@
 package com.pet.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -31,6 +32,7 @@ public class Article {
     @ManyToOne(fetch = FetchType.LAZY)
     @ToString.Exclude
     @JoinColumn(name = "author_id")
+    @JsonIgnore
     private User author;
 
     @Column(name = "image_url", length = 255)

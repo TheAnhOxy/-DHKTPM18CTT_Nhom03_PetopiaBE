@@ -54,7 +54,7 @@ public class AiServiceHybridImpl implements AiService {
             AiAttributesDTO attrs = attributeExtractor.extract(userInput);
 
             if (attrs == null) {
-                return buildGeneralChatResponse();
+                return buildGeneralChatResponse("");
             }
 
             // Default confidence if missing
@@ -62,7 +62,7 @@ public class AiServiceHybridImpl implements AiService {
 
             // General chat handling
             if ("general".equalsIgnoreCase(attrs.getDomain()) || attrs.getConfidence() < 0.35) {
-                return buildGeneralChatResponse();
+                return buildGeneralChatResponse("general");
             }
 
             String domain = attrs.getDomain() == null ? "" : attrs.getDomain().toLowerCase(Locale.ROOT);
@@ -78,7 +78,7 @@ public class AiServiceHybridImpl implements AiService {
                 case "order":
                     return handleOrderQuery(userInput, attrs);
                 default:
-                    return buildGeneralChatResponse();
+                    return buildGeneralChatResponse(domain);
             }
         } catch (Exception ex) {
             log.error("AiServiceHybridImpl chat error", ex);
@@ -471,10 +471,195 @@ public class AiServiceHybridImpl implements AiService {
             return Collections.emptyList();
         }
     }
+    private boolean contains(String text, String... keywords) {
+        if (text == null || keywords == null) return false;
 
-    private ChatResponseDTO buildGeneralChatResponse() {
-        return ChatResponseDTO.builder().message("Mình chưa hiểu rõ lắm, bạn mô tả chi tiết hơn giúp mình được không? 🐶").actionType("NONE").build();
+        String normalized = removeVietnameseAccents(text.toLowerCase());
+
+        for (String kw : keywords) {
+            if (kw == null) continue;
+            String normalizedKw = removeVietnameseAccents(kw.toLowerCase());
+            if (normalized.contains(normalizedKw)) {
+                return true;
+            }
+        }
+        return false;
     }
+    private static final Map<Character, Character> VIETNAMESE_ACCENTS_MAP = new HashMap<>() {{
+        put('á', 'a'); put('à', 'a'); put('ả', 'a'); put('ã', 'a'); put('ạ', 'a');
+        put('ă', 'a'); put('ắ', 'a'); put('ằ', 'a'); put('ẳ', 'a'); put('ẵ', 'a'); put('ặ', 'a');
+        put('â', 'a'); put('ấ', 'a'); put('ầ', 'a'); put('ẩ', 'a'); put('ẫ', 'a'); put('ậ', 'a');
+        put('đ', 'd');
+        put('é', 'e'); put('è', 'e'); put('ẻ', 'e'); put('ẽ', 'e'); put('ẹ', 'e');
+        put('ê', 'e'); put('ế', 'e'); put('ề', 'e'); put('ể', 'e'); put('ễ', 'e'); put('ệ', 'e');
+        put('í', 'i'); put('ì', 'i'); put('ỉ', 'i'); put('ĩ', 'i'); put('ị', 'i');
+        put('ó', 'o'); put('ò', 'o'); put('ỏ', 'o'); put('õ', 'o'); put('ọ', 'o');
+        put('ô', 'o'); put('ố', 'o'); put('ồ', 'o'); put('ổ', 'o'); put('ỗ', 'o'); put('ộ', 'o');
+        put('ơ', 'o'); put('ớ', 'o'); put('ờ', 'o'); put('ở', 'o'); put('ỡ', 'o'); put('ợ', 'o');
+        put('ú', 'u'); put('ù', 'u'); put('ủ', 'u'); put('ũ', 'u'); put('ụ', 'u');
+        put('ư', 'u'); put('ứ', 'u'); put('ừ', 'u'); put('ử', 'u'); put('ữ', 'u'); put('ự', 'u');
+        put('ý', 'y'); put('ỳ', 'y'); put('ỷ', 'y'); put('ỹ', 'y'); put('ỵ', 'y');
+    }};
+
+    private String removeVietnameseAccents(String input) {
+        if (input == null) return "";
+
+        StringBuilder sb = new StringBuilder();
+        for (char c : input.toCharArray()) {
+            sb.append(VIETNAMESE_ACCENTS_MAP.getOrDefault(c, c));
+        }
+        return sb.toString();
+    }
+
+
+    private ChatResponseDTO buildGeneralChatResponse(String userInput) {
+
+        String text = userInput.toLowerCase().trim();
+
+        // ==========================
+        // 1. PREDICT DOMAIN FROM KEYWORDS
+        // ==========================
+        boolean petHint = contains(text, "chó", "mèo", "pet", "thú cưng", "động vật", "vật nuôi", "giống");
+        boolean serviceHint = contains(text, "spa", "tắm", "grooming", "cắt tỉa", "dịch vụ", "làm đẹp");
+        boolean voucherHint = contains(text, "voucher", "giảm giá", "khuyến mãi", "sale");
+        boolean articleHint = contains(text, "bài viết", "blog", "tin tức", "hướng dẫn", "kiến thức");
+        boolean orderHint = contains(text, "đơn hàng", "theo dõi", "order", "tracking");
+
+        // ==========================
+        // 2. WHEN DOMAIN IS UNCLEAR BUT HAS HINT
+        // Ask for missing parameters
+        // ==========================
+
+        // -------- PET DOMAIN --------
+        if (petHint) {
+            // TH1: Người dùng hỏi chung chung
+            if (!contains(text, "giá", "bao nhiêu", "phân khúc", "giống", "loại", "màu", "size")) {
+
+                // Suggest real database examples
+                var cheapPets = petRepository.findTop5ByOrderByPriceAsc();
+                List<String> sug = new ArrayList<>();
+
+                cheapPets.forEach(p -> sug.add(p.getName() + " - " + p.getPrice() + "đ"));
+
+                return ChatResponseDTO.builder()
+                        .message("""
+                            Bạn đang quan tâm đến thú cưng đúng không? 🐾  
+                            Bạn muốn tìm theo **giá**, **giống**, hay **màu sắc**?
+                            
+                            Đây là 1 vài gợi ý giá rẻ nhất để bạn tham khảo:
+                            """ + String.join("\n", sug))
+                        .actionType("SUGGEST")
+                        .build();
+            }
+
+            // TH2: hỏi pet nhưng thiếu thông tin giá
+            if (contains(text, "dưới") && !containsNumber(text)) {
+                return ChatResponseDTO.builder()
+                        .message("Bạn muốn xem thú cưng dưới bao nhiêu ạ? Ví dụ: dưới 2 triệu, dưới 5 triệu,…")
+                        .actionType("ASK_PRICE")
+                        .build();
+            }
+
+            // TH3: thiếu giống
+            if (contains(text, "giá") && !contains(text, "giống")) {
+                return ChatResponseDTO.builder()
+                        .message("Bạn muốn xem giống nào ạ? Ví dụ: Mèo Anh, Mèo Ba Tư, Chó Poodle,…")
+                        .actionType("ASK_BREED")
+                        .build();
+            }
+        }
+
+        // -------- SERVICE DOMAIN --------
+        if (serviceHint) {
+
+            if (!contains(text, "giá", "bảng giá", "grooming", "spa", "tắm")) {
+
+                var topSv = serviceRepository.findTop3ByOrderByPriceAsc();
+                List<String> sug = new ArrayList<>();
+                topSv.forEach(s -> sug.add(s.getName() + " - " + s.getPrice() + "đ"));
+
+                return ChatResponseDTO.builder()
+                        .message("Bạn muốn làm dịch vụ cho pet đúng không? 😺\nDưới đây là vài dịch vụ giá tốt nhất:" +
+                                "\n" + String.join("\n", sug) +
+                                "\nBạn muốn tìm dịch vụ theo **giá** hay **loại dịch vụ**?")
+                        .actionType("SUGGEST")
+
+                        .build();
+            }
+
+            if (!contains(text, "tắm", "spa", "grooming", "cắt tỉa")) {
+                return ChatResponseDTO.builder()
+                        .message("Bạn muốn dịch vụ nào ạ? Ví dụ: Tắm, Spa, Grooming,…")
+                        .actionType("ASK_SERVICE_TYPE")
+                        .build();
+            }
+        }
+
+        // -------- VOUCHER DOMAIN --------
+        if (voucherHint) {
+            if (!contains(text, "spa", "pet", "thú cưng", "dịch vụ", "giảm giá")) {
+                return ChatResponseDTO.builder()
+                        .message("Bạn muốn voucher cho dịch vụ hay thú cưng ạ?")
+                        .actionType("ASK_VOUCHER_TYPE")
+                        .build();
+            }
+
+            var v = voucherRepository.findTop5ByOrderByDiscountValueDesc();
+            List<String> sug = v.stream()
+                    .map(x -> x.getCode() + " - giảm " + x.getDiscountValue() + "%")
+                    .toList();
+
+            return ChatResponseDTO.builder()
+                    .message("✨ Đây là những voucher giảm mạnh nhất hiện tại:" +
+                            "\n" + String.join("\n", sug))
+                    .actionType("SUGGEST")
+                    .build();
+        }
+
+        // -------- ARTICLE DOMAIN --------
+        if (articleHint) {
+
+            if (!contains(text, "pet", "chó", "mèo", "dịch vụ", "kiến thức")) {
+                return ChatResponseDTO.builder()
+                        .message("Bạn muốn xem bài viết về chủ đề gì ạ? Ví dụ: chăm sóc mèo, nuôi chó con,…")
+                        .actionType("ASK_TOPIC")
+                        .build();
+            }
+
+            var articles = articleRepository.findTop3ByOrderByCreatedAtDesc();
+            List<String> sug = articles.stream()
+                    .map(a -> a.getTitle())
+                    .toList();
+
+            return ChatResponseDTO.builder()
+                    .message("📚 Dưới đây là bài viết mới nhất: \n" + String.join("\n", sug) + "\nBạn muốn xem thêm bài viết về chủ đề gì?")
+                    .actionType("SUGGEST")
+                    .build();
+        }
+
+        // -------- ORDER DOMAIN --------
+        if (orderHint) {
+            if (!containsNumber(text)) {
+                return ChatResponseDTO.builder()
+                        .message("Bạn muốn tra đơn hàng nào ạ? Hãy gửi mã đơn hàng (VD: ORD12345).")
+                        .actionType("ASK_ORDER_ID")
+                        .build();
+            }
+        }
+
+        // ==========================
+        // 3. AI CHAT MODE — nếu không thuộc domain nào
+        // ==========================
+
+        return ChatResponseDTO.builder()
+                .message("Mình chưa rõ bạn đang muốn tìm gì. Bạn có thể mô tả chi tiết hơn giúp mình không? 😊")
+                .actionType("NONE")
+                .build();
+    }
+    private boolean containsNumber(String text) {
+        return text.matches(".*\\d+.*");
+    }
+
 
     // ----------------------------
     // INNER CLASSES
