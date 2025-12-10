@@ -33,4 +33,5 @@ public interface VoucherRepository extends JpaRepository<Voucher, String> {
     // AI
     @Query("SELECT v FROM Voucher v WHERE v.status = 'ACTIVE' AND v.startDate <= CURRENT_DATE AND v.endDate >= CURRENT_DATE AND v.usedCount < v.maxUsage")
     List<Voucher> findAvailableVouchersForChat();
+    List<Voucher> findTop5ByOrderByDiscountValueDesc();
 }

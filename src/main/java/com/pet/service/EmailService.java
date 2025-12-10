@@ -1,5 +1,7 @@
 package com.pet.service;
 
+import com.pet.entity.BookingService;
+import com.pet.modal.request.BookingRequestDTO;
 import com.pet.modal.request.ContactRequestDTO;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -55,6 +57,56 @@ public class EmailService {
             log.error("Gửi email thất bại: {}", e.getMessage());
         }
     }
+    public void sendBookingNotification(BookingRequestDTO dto, BookingService booking) {
+
+        // Tiêu đề email
+        String subject = "[Petopia] Có lịch đặt dịch vụ mới #" + booking.getBookingServiceId();
+
+        String htmlContent = String.format("""
+    <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+        <h2 style="color: #1E90FF;">📅 Có lịch đặt dịch vụ mới</h2>
+        <hr style="border: 0; border-top: 1px solid #eee;" />
+
+        <h3>👤 Thông tin khách hàng</h3>
+        <p><strong>Họ tên:</strong> %s</p>
+        <p><strong>Email:</strong> <a href="mailto:%s">%s</a></p>
+        <p><strong>Số điện thoại:</strong> %s</p>
+
+        <h3>🐾 Thông tin dịch vụ</h3>
+        <p><strong>Mã Booking:</strong> %s</p>
+        <p><strong>Dịch vụ:</strong> %s</p>
+        <p><strong>Số lượng:</strong> %d</p>
+        <p><strong>Giá tại thời điểm đặt:</strong> %,.0f VND</p>
+        <p><strong>Ngày hẹn:</strong> %s</p>
+        <p><strong>Ghi chú:</strong> %s</p>
+
+        <br/>
+        <p style="font-size: 12px; color: #888;">Email này được gửi tự động từ hệ thống Petopia.</p>
+    </div>
+    """,
+
+                dto.getName(),                   // Họ tên khách
+                dto.getEmail(), dto.getEmail(),      // Email
+                dto.getPhone(),                      // Số điện thoại
+
+                booking.getBookingServiceId(),       // Mã booking
+                booking.getService().getName(), // Tên dịch vụ
+                dto.getQuantity(),                   // Số lượng
+                dto.getPriceAtPurchase(),            // Giá
+                booking.getAppointmentDate(),        // Ngày hẹn từ DB
+                dto.getNote() != null ? dto.getNote() : "Không có"
+        );
+
+        // Gửi mail tới admin
+        this.sendEmailContact(
+                adminEmail,                 // Người nhận
+                subject,                    // Tiêu đề
+                htmlContent,                // Nội dung
+                dto.getEmail()              // Reply-to
+        );
+    }
+
+
     @Async
     public void sendEmailContact(String toEmail, String subject, String htmlContent, String replyTo) {
         try {
@@ -62,7 +114,7 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setTo(toEmail);
+            helper.setTo("nguyencongdanhkun@gmail.com");
             helper.setSubject(subject);
 
             helper.setFrom(adminEmail);
