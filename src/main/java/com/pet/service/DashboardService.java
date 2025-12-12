@@ -61,34 +61,29 @@ public class DashboardService {
     @Cacheable(value = "dashboard_main_stats", key = "'main-' + (#startDate != null ? #startDate.toString() : 'all') + '-' + (#endDate != null ? #endDate.toString() : 'all')")
     public MainDashboardDTO getMainStats(LocalDate startDate, LocalDate endDate) {
 
-        // 1. Xử lý ngày giờ mặc định
+        // Xử lý ngày giờ mặc định
         LocalDateTime startDateTime;
         LocalDateTime endDateTime;
 
         if (startDate != null) {
             startDateTime = startDate.atStartOfDay(); // 00:00:00
         } else {
-            // Mặc định lấy từ xa xưa (nếu muốn xem all time) hoặc đầu tháng này
             startDateTime = LocalDateTime.of(1970, 1, 1, 0, 0);
         }
 
         if (endDate != null) {
             endDateTime = endDate.atTime(23, 59, 59); // 23:59:59
         } else {
-            endDateTime = LocalDateTime.now(); // Đến hiện tại
+            endDateTime = LocalDateTime.now();
         }
 
-        // 2. Tính toán các chỉ số cố định (Hôm nay, Tuần này, Tháng này)
+        //  Tính toán các chỉ số cố định (Hôm nay, Tuần này, Tháng này)
         // Những cái này KHÔNG PHỤ THUỘC vào bộ lọc (để hiển thị so sánh)
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         LocalDateTime startOfWeek = now.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)).with(java.time.LocalTime.MIN);
         LocalDateTime startOfMonth = now.with(java.time.temporal.TemporalAdjusters.firstDayOfMonth()).with(java.time.LocalTime.MIN);
 
-        // 3. Query dữ liệu theo bộ lọc (Filter)
-        // Lưu ý: Các trường totalOrders, totalPreBookings... sẽ thay đổi theo bộ lọc ngày
-
-        // SỬA ĐOẠN RETURN NÀY: Thêm hàm safeDouble()
         return MainDashboardDTO.builder()
                 .revenueToday(safeDouble(orderRepository.calculateRevenueBetween(startOfDay, now)))
                 .revenueThisWeek(safeDouble(orderRepository.calculateRevenueBetween(startOfWeek, now)))

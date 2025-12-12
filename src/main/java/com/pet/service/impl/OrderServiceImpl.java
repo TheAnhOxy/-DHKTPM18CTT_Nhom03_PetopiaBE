@@ -596,7 +596,7 @@ public class OrderServiceImpl implements OrderService {
                             </tr>
                             <tr>
                                 <td style="padding: 8px 0; color: #555;"><strong>Trạng thái:</strong></td>
-                                <td style="padding: 8px 0; color: #27ae60; font-weight: bold;">✓ Đã giao hàng (DELIVERED)</td>
+                                <td style="padding: 8px 0; color: #27ae60; font-weight: bold;">✓ Đang giao hàng (IN_TRAINTS)</td>
                             </tr>
                             <tr>
                                 <td style="padding: 8px 0; color: #555;"><strong>Phương thức thanh toán:</strong></td>
@@ -1047,11 +1047,11 @@ public class OrderServiceImpl implements OrderService {
 
             // Nếu có sự thay đổi trạng thái Delivery tương ứng
             if (newDeliveryStatus != null && delivery.getDeliveryStatus() != newDeliveryStatus) {
-                // 3.1. Cập nhật bảng Delivery
+                //  Cập nhật bảng Delivery
                 delivery.setDeliveryStatus(newDeliveryStatus);
                 deliveryRepository.save(delivery);
 
-                // 3.2. Tạo bản ghi lịch sử (DeliveryHistory)
+                // Tạo bản ghi lịch sử (DeliveryHistory)
                 DeliveryHistory history = new DeliveryHistory();
                 history.setHistoryId(generateDeliveryHistoryId()); // Sử dụng hàm sinh ID của bạn
                 history.setDelivery(delivery);
@@ -1103,7 +1103,6 @@ public class OrderServiceImpl implements OrderService {
         }
     }
     private String generateOrderItemId() {
-        // Lấy lastId một lần duy nhất, sau đó dùng sequence trong bộ nhớ
         if (orderItemSequence.get() == 0) {
             String lastId = orderItemRepository.findLastOrderItemId().orElse("OI000");
             try {

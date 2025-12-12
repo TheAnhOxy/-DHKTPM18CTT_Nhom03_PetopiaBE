@@ -40,6 +40,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/payments/sepay-webhook").permitAll() // Webhook thanh toán
                         .requestMatchers("/api/chat", "/api/chat/**").permitAll()
                         .requestMatchers("/api/contact", "/api/contact/**").permitAll()
+                        .requestMatchers("/api/articles", "/api/articles/**").permitAll()
                         .requestMatchers("/api/reviews").permitAll()
 
                         // Cho phép xem danh sách (GET) mà không cần login

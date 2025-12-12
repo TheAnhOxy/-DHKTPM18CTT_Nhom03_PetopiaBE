@@ -28,7 +28,7 @@ public class JwtTokenUtils {
     @Value("${jwt.refresh-expiration}") // Đọc từ file config
     private long refreshExpiration;
 
-    // 1. Generate Access Token (Giữ nguyên)
+    //  Generate Access Token (Giữ nguyên)
     public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", user.getUserId());
@@ -36,7 +36,7 @@ public class JwtTokenUtils {
         return buildToken(claims, user, expiration);
     }
 
-    // 2. Generate Refresh Token (MỚI)
+    // Generate Refresh Token (MỚI)
     public String generateRefreshToken(User user) {
         // Refresh token thường không cần claims phức tạp, chỉ cần định danh user
         return buildToken(new HashMap<>(), user, refreshExpiration);
